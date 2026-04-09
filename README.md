@@ -8,12 +8,11 @@ flowchart LR
     --> Dispatcher["Dispatcher<br/><i>decorator</i>"]
     --> RecordEvent["RecordEvent<br/><i>action</i>"]
     --> Log[("Log")]
-    --> RecordDestination["RecordDestination<br/><i>action</i>"]
+    --> LogProcess["Log·Process<br/><i>trigger · creates Destinations</i>"]
     --> Destination[("Destination")]
-    --> RecordDeliveries["RecordDeliveries<br/><i>action · uses DestinationProcessor</i>"]
-    --> RecordDelivery["RecordDelivery<br/><i>action</i>"]
+    --> DestProcess["Destination·Process<br/><i>trigger · uses DestinationProcessor</i>"]
     --> Delivery[("Delivery")]
-    --> ProcessDelivery["ProcessDelivery<br/><i>action · uses DeliveryProcessor</i>"]
+    --> DelProcess["Delivery·Process<br/><i>trigger · uses DeliveryProcessor</i>"]
     --> Attempt[("Attempt")]
 ```
 
@@ -29,7 +28,8 @@ classDiagram
     class ForEntity {
         <<interface>>
         +Entity entity
-        +broadcastAs() string
+        +Stringable alias
+        +Stringable uniqueAlias
     }
     class Destinationable {
         <<interface>>
