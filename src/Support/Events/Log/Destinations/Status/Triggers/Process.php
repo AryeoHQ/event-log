@@ -30,6 +30,7 @@ final class Process extends Trigger
         $deliveries = $processor->deliveries($this->destination);
 
         $deliveries->each(function (array $deliveryData) {
+            /** @var Delivery $delivery */
             $delivery = Delivery::create([
                 'event_log_destination_id' => $this->destination->id,
                 'payload' => $deliveryData['payload'],
@@ -46,7 +47,7 @@ final class Process extends Trigger
      */
     private function resolveDestinationable(): string
     {
-        $event = unserialize($this->destination->log->event);
+        $event = $this->destination->log->event;
         $interfaces = class_implements($event);
 
         $manager = app(Manager::class);

@@ -43,6 +43,7 @@ final class Process extends Trigger
     private function destinationables(): Collection
     {
         // TODO: Should the `Event` be able to answer this question of destinationables instead of this trigger?
+        // TODO: Maybe `Manager` should instead?
         $event = $this->log->event;
         $interfaces = class_implements($event);
 
