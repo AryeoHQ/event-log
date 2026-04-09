@@ -7,42 +7,41 @@ namespace Tests;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench;
+use Support\Events\Log\Providers\Provider;
+use Tests\Fixtures\Support\Entities\Articles\Provider as ArticlesProvider;
 
 abstract class TestCase extends Testbench\TestCase
 {
+    protected $enablesPackageDiscoveries = true;
+
+    /**
+     * @return array<int, class-string>
+     */
+    protected function getPackageProviders($app): array
+    {
+        return [
+            Provider::class,
+            ArticlesProvider::class,
+        ];
+    }
+
     protected function defineDatabaseMigrations(): void
     {
-        Schema::create('users', function (Blueprint $table): void {
-            $table->id();
-            $table->string('first_name');
-            $table->string('middle_name')->nullable();
-            $table->string('last_name');
-            $table->string('biography')->nullable();
-            $table->text('email');
-            $table->string('username');
-            $table->date('date_of_birth')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        $this->artisan('migrate');
 
-        Schema::create('posts', function (Blueprint $table): void {
-            $table->id();
-            $table->string('title');
-            $table->integer('rating')->nullable();
-            $table->foreignId('user_id')->nullable();
+        Schema::create('articles', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
             $table->timestamps();
         });
 
-        Schema::create('teams', function (Blueprint $table): void {
+        Schema::create('jobs', function (Blueprint $table): void {
             $table->id();
-            $table->string('name');
-            $table->timestamps();
-        });
-
-        Schema::create('team_user', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('team_id');
-            $table->foreignId('user_id');
+            $table->string('queue')->index();
+            $table->longText('payload');
+            $table->unsignedTinyInteger('attempts');
+            $table->unsignedInteger('reserved_at')->nullable();
+            $table->unsignedInteger('available_at');
+            $table->unsignedInteger('created_at');
         });
     }
 }

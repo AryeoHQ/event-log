@@ -9,16 +9,34 @@
         "actions": {
             "type": "vcs",
             "url": "https://github.com/AryeoHQ/actions"
+        },
+        "entities": {
+            "type": "vcs",
+            "url": "https://github.com/AryeoHQ/entities"
+        },
+        "eloquent-filters": {
+            "type": "vcs",
+            "url": "https://github.com/AryeoHQ/eloquent-filters"
+        },
+        "eloquent-state-machines": {
+            "type": "vcs",
+            "url": "https://github.com/AryeoHQ/eloquent-state-machines"
+        },
+        "primitives": {
+            "type": "vcs",
+            "url": "https://github.com/AryeoHQ/primitives"
         }
     },
     "require": {
         "php": "^8.4",
         "laravel/framework": "^12.37",
-        "aryeo/actions": "^0.0"
+        "aryeo/actions": "0.0.9",
+        "aryeo/entities": "0.0.14",
+        "aryeo/eloquent-state-machines": "dev-customizable-transition-timing as 0.0.13"
     },
     "require-dev": {
         "orchestra/testbench": "^10.6",
-        "aryeo/tooling-laravel": "0.0.33",
+        "aryeo/tooling-laravel": "0.0.34 as 0.0.33",
         "brianium/paratest": "^7.14",
         "phpunit/phpunit": "^12.4.1",
         "pestphp/pest": "^4.1",
@@ -49,6 +67,11 @@
         }
     },
     "extra": {
+        "laravel": {
+            "providers": [
+                "Support\\Events\\Log\\Providers\\Provider"
+            ]
+        },
         "tooling": {
             "rector": {
                 "configured_rules": "tooling/rector/configured-rules.php"

@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Fixtures\Support\Entities\Articles\Events;
+
+use Support\Entities\Events\Attributes\Alias;
+use Support\Entities\Events\Provides\EntityDriven;
+use Support\Events\Log\Contracts\Recordable;
+use Tests\Fixtures\Support\Entities\Articles\Article;
+
+#[Alias('article.created')]
+final class Created implements Recordable
+{
+    use EntityDriven;
+
+    public readonly Article $entity;
+
+    public function __construct(Article $entity)
+    {
+        $this->entity = $entity;
+    }
+}

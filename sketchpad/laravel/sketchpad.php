@@ -1,14 +1,26 @@
 <?php
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schedule;
 
-class Order extends Model
-{
-    protected $fillable = ['*'];
-}
+// RecordEvent
+$eventLog = EventLog::create(); // Ready
+$eventLog->status->prepare()->now(); // Pending
 
-$order = Order::make(['banana' => 'yellow']);
+// Prepare
+$eventLog->status->process()->now();
 
-$order->update(['banana' => 'green']);
+// Process
+$destinations = collect($eventLog->destinations)->flatMap(
+    Destination::create();
+);
+
+
+
+$desintinations->each(
+    $destionation->status->prepare()->dispatch();
+);
+
+
 
 return 'Silence in the face of evil is itself evil.';

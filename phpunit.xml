@@ -4,7 +4,7 @@
   bootstrap="vendor/autoload.php" colors="true" cacheDirectory=".phpunit.cache">
   <testsuites>
     <testsuite name="Feature">
-      <directory suffix="Test.php">./tests</directory>
+      <directory suffix="Test.php">./src</directory>
     </testsuite>
   </testsuites>
   <source>
@@ -15,5 +15,7 @@
   <php>
     <env name="APP_KEY" value="base64:sqZsknu3DcUA1iUynaz3a6Rf4SslS3YoZ8Bal/JP8GQ=" />
     <env name="BCRYPT_ROUNDS" value="4" />
+    <env name="QUEUE_CONNECTION" value="sync" />
+    <env name="BROADCAST_CONNECTION" value="null" />
   </php>
 </phpunit>
