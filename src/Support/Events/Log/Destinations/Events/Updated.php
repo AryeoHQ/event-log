@@ -7,7 +7,7 @@ namespace Support\Events\Log\Destinations\Events;
 use Support\Entities\Events\Attributes\Alias;
 use Support\Entities\Events\Contracts\ForEntity;
 use Support\Entities\Events\Provides\EntityDriven;
-use Support\Events\Log\Destinations\Entities\Destination;
+use Support\Events\Log\Destinations\Destination;
 
 #[Alias('event-log-destination.updated')]
 final class Updated implements ForEntity

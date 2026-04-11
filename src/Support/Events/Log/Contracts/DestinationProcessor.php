@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Support\Events\Log\Contracts;
 
 use Illuminate\Support\Collection;
-use Support\Events\Log\Destinations\Entities\Destination;
+use Support\Events\Log\Destinations\Destination;
 
 interface DestinationProcessor
 {

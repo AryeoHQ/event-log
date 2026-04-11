@@ -8,7 +8,7 @@ use Support\Database\Eloquent\StateMachines\Triggers\Phases\Phase;
 use Support\Database\Eloquent\StateMachines\Triggers\Phases\TransitionDuring;
 use Support\Database\Eloquent\StateMachines\Triggers\Target\Target;
 use Support\Database\Eloquent\StateMachines\Triggers\Trigger;
-use Support\Events\Log\Destinations\Entities\Destination;
+use Support\Events\Log\Destinations\Destination;
 
 #[TransitionDuring(Phase::Before)]
 final class Prepare extends Trigger

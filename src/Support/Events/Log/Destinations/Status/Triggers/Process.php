@@ -8,7 +8,7 @@ use Support\Database\Eloquent\StateMachines\Triggers\Target\Target;
 use Support\Database\Eloquent\StateMachines\Triggers\Trigger;
 use Support\Events\Log\Contracts\Destinationable;
 use Support\Events\Log\Deliveries\Delivery;
-use Support\Events\Log\Destinations\Entities\Destination;
+use Support\Events\Log\Destinations\Destination;
 use Support\Events\Log\Manager;
 
 final class Process extends Trigger

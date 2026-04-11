@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Support\Events\Log\Destinations\Entities;
+namespace Support\Events\Log\Destinations;
 
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;

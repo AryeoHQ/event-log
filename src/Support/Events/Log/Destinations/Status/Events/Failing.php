@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Support\Events\Log\Destinations\Status\Events;
 
-use Support\Events\Log\Destinations\Entities\Destination;
+use Support\Events\Log\Destinations\Destination;
 
 class Failing
 {
