@@ -7,7 +7,7 @@ namespace Support\Events\Log\Logs\Events;
 use Support\Entities\Events\Attributes\Alias;
 use Support\Entities\Events\Contracts\ForEntity;
 use Support\Entities\Events\Provides\EntityDriven;
-use Support\Events\Log\Logs\Entities\Log;
+use Support\Events\Log\Logs\Log;
 
 final class Created
 {

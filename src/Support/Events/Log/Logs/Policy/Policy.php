@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Support\Events\Log\Logs\Policy;
 
 use Illuminate\Contracts\Auth\Authenticatable;
-use Support\Events\Log\Logs\Entities\Log;
+use Support\Events\Log\Logs\Log;
 
 final class Policy
 {

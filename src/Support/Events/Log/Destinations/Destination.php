@@ -20,7 +20,7 @@ use Support\Events\Log\Destinations\Events;
 use Support\Events\Log\Destinations\Factory\Factory;
 use Support\Events\Log\Destinations\Policy\Policy;
 use Support\Events\Log\Destinations\Status\Status;
-use Support\Events\Log\Logs\Entities\Log;
+use Support\Events\Log\Logs\Log;
 
 /**
  * @use HasFactory<Factory>

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Support\Actions\Contracts\Action;
 use Support\Actions\Concerns\AsAction;
 use Illuminate\Support\Facades\Context;
-use Support\Events\Log\Logs\Entities\Log;
+use Support\Events\Log\Logs\Log;
 use Support\Events\Log\Contracts\Recordable;
 use Support\Events\Log\Contracts\RecordableAfterCommit;
 

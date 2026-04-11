@@ -7,7 +7,7 @@ namespace Support\Events\Log;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use Support\Events\Log\Logs\Entities\Log;
+use Support\Events\Log\Logs\Log;
 use Tests\Fixtures\Support\Entities\Articles\Article;
 use Tests\Fixtures\Support\Entities\Articles\Events\Created;
 use Tests\TestCase;
