@@ -64,16 +64,12 @@ class Log extends Model implements Entity
     protected $table = 'event_logs';
 
     protected $fillable = [
-        'type',
-        'entity_id',
-        'entity_type',
         'event',
         'actor_id',
         'actor_type',
         'subject_id',
         'subject_type',
         'occurred_at',
-        'status',
     ];
 
     protected $casts = [
@@ -88,7 +84,7 @@ class Log extends Model implements Entity
     protected static function booted(): void
     {
         static::creating(
-            fn (Log $log) => $log->forceFill([
+            fn (Log $log) => $log->occurred_at ?? $log->forceFill([
                 'occurred_at' => now(),
             ])
         );

@@ -9,15 +9,12 @@ use Support\Entities\Events\Contracts\ForEntity;
 use Support\Entities\Events\Provides\EntityDriven;
 use Support\Events\Log\Logs\Entities\Log;
 
-#[Alias('event-log.created')]
-final class Created implements ForEntity
+final class Created
 {
-    use EntityDriven;
+    public readonly Log $log;
 
-    public readonly Log $entity;
-
-    public function __construct(Log $entity)
+    public function __construct(Log $log)
     {
-        $this->entity = $entity;
+        $this->log = $log;
     }
 }

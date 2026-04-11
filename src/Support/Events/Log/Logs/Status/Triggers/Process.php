@@ -33,7 +33,7 @@ final class Process extends Trigger
                 'status' => 'ready',
             ]);
 
-            $destination->status->prepare()->now();
+            $destination->status->prepare()->dispatch();
         });
     }
 
