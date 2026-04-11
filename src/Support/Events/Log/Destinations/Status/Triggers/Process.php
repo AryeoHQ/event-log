@@ -7,7 +7,7 @@ namespace Support\Events\Log\Destinations\Status\Triggers;
 use Support\Database\Eloquent\StateMachines\Triggers\Target\Target;
 use Support\Database\Eloquent\StateMachines\Triggers\Trigger;
 use Support\Events\Log\Contracts\Destinationable;
-use Support\Events\Log\Deliveries\Entities\Delivery;
+use Support\Events\Log\Deliveries\Delivery;
 use Support\Events\Log\Destinations\Entities\Destination;
 use Support\Events\Log\Manager;
 

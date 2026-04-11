@@ -6,8 +6,8 @@ namespace Support\Events\Log\Deliveries\Status\Triggers;
 
 use Support\Database\Eloquent\StateMachines\Triggers\Target\Target;
 use Support\Database\Eloquent\StateMachines\Triggers\Trigger;
-use Support\Events\Log\Attempts\Entities\Attempt;
-use Support\Events\Log\Deliveries\Entities\Delivery;
+use Support\Events\Log\Attempts\Attempt;
+use Support\Events\Log\Deliveries\Delivery;
 
 final class Process extends Trigger
 {

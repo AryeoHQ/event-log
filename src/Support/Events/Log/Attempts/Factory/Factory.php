@@ -9,7 +9,7 @@ namespace Support\Events\Log\Attempts\Factory;
  */
 class Factory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
-    protected $model = \Support\Events\Log\Attempts\Entities\Attempt::class;
+    protected $model = \Support\Events\Log\Attempts\Attempt::class;
 
     public function definition(): array
     {

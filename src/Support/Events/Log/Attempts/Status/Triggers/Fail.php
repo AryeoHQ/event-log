@@ -6,7 +6,7 @@ namespace Support\Events\Log\Attempts\Status\Triggers;
 
 use Support\Database\Eloquent\StateMachines\Triggers\Target\Target;
 use Support\Database\Eloquent\StateMachines\Triggers\Trigger;
-use Support\Events\Log\Attempts\Entities\Attempt;
+use Support\Events\Log\Attempts\Attempt;
 
 final class Fail extends Trigger
 {

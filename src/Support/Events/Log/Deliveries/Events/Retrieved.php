@@ -7,7 +7,7 @@ namespace Support\Events\Log\Deliveries\Events;
 use Support\Entities\Events\Attributes\Alias;
 use Support\Entities\Events\Contracts\ForEntity;
 use Support\Entities\Events\Provides\EntityDriven;
-use Support\Events\Log\Deliveries\Entities\Delivery;
+use Support\Events\Log\Deliveries\Delivery;
 
 #[Alias('event-log-delivery.retrieved')]
 final class Retrieved implements ForEntity

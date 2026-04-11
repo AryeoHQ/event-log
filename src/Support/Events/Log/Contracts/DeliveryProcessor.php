@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Support\Events\Log\Contracts;
 
-use Support\Events\Log\Deliveries\Entities\Delivery;
+use Support\Events\Log\Deliveries\Delivery;
 
 interface DeliveryProcessor
 {

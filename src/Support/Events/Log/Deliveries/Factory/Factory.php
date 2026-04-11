@@ -9,7 +9,7 @@ namespace Support\Events\Log\Deliveries\Factory;
  */
 class Factory extends \Illuminate\Database\Eloquent\Factories\Factory
 {
-    protected $model = \Support\Events\Log\Deliveries\Entities\Delivery::class;
+    protected $model = \Support\Events\Log\Deliveries\Delivery::class;
 
     public function definition(): array
     {
