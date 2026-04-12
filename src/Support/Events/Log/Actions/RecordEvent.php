@@ -41,7 +41,6 @@ final class RecordEvent implements Action
     // TODO: Only the prepares that run synchronously should transition Phase::Before
     public function handle(): void
     {
-        // Recordable (ing) / RecordableAfterCommit (ed)
         if (! ($this->event instanceof Recordable)) {
             return;
         }
