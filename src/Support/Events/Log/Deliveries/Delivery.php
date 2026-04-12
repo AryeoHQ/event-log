@@ -11,8 +11,6 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Support\Entities\Contracts\Entity;
-use Support\Entities\References\Concerns\AsEntity;
 use Support\Events\Log\Deliveries\Builder\Builder;
 use Support\Events\Log\Deliveries\Collection\Deliveries;
 use Support\Events\Log\Deliveries\Events;
@@ -31,9 +29,8 @@ use Support\Events\Log\Deliveries\Status\Status;
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
 #[UsePolicy(Policy::class)]
-class Delivery extends Model implements Entity
+class Delivery extends Model
 {
-    use AsEntity;
     use HasFactory;
     use HasUuids;
 

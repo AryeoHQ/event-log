@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Support\Events\Log\Attempts\Events;
 
-use Support\Entities\Events\Attributes\Alias;
-use Support\Entities\Events\Contracts\ForEntity;
-use Support\Entities\Events\Provides\EntityDriven;
 use Support\Events\Log\Attempts\Attempt;
 
-#[Alias('event-log-delivery-attempt.saved')]
-final class Saved implements ForEntity
+final class Saved
 {
-    use EntityDriven;
 
     public readonly Attempt $entity;
 

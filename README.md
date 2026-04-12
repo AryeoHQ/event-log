@@ -3,7 +3,7 @@
 ## Pipeline
 
 ```mermaid
-flowchart LR
+flowchart TB
     Event(("Event<br/>dispatched"))
     --> Dispatcher["Dispatcher<br/><i>decorator</i>"]
     --> RecordEvent["RecordEvent<br/><i>action</i>"]

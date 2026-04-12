@@ -7,6 +7,7 @@ namespace Support\Events\Log\Providers;
 use Illuminate\Events\Dispatcher as BaseDispatcher;
 use Illuminate\Support\ServiceProvider;
 use Support\Events\Log\Dispatcher;
+use Support\Events\Log\Dispatcher\Mixins\DisablesSerializesModels;
 use Support\Events\Log\Manager;
 
 class Provider extends ServiceProvider
@@ -22,6 +23,8 @@ class Provider extends ServiceProvider
 
     public function boot(): void
     {
+        BaseDispatcher::mixin(new DisablesSerializesModels);
+
         $this->publishes([
             __DIR__.'/../../../../../config/event_log.php' => config_path('event_log.php'),
         ], 'config');

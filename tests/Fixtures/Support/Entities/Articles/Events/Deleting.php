@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Support\Entities\Articles\Events;
 
-use Support\Entities\Events\Attributes\Alias;
-use Support\Entities\Events\Contracts\ForEntity;
-use Support\Entities\Events\Provides\EntityDriven;
 use Tests\Fixtures\Support\Entities\Articles\Article;
 
-#[Alias('article.deleting')]
-final class Deleting implements ForEntity
+final class Deleting
 {
-    use EntityDriven;
 
     public readonly Article $entity;
 

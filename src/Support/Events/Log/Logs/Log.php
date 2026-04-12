@@ -13,8 +13,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Event;
-use Support\Entities\Contracts\Entity;
-use Support\Entities\References\Concerns\AsEntity;
 use Support\Events\Log\Contracts\Recordable;
 use Support\Events\Log\Logs\Builder\Builder;
 use Support\Events\Log\Logs\Collection\Logs;
@@ -34,9 +32,8 @@ use Support\Events\Log\Logs\Status\Status;
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
 #[UsePolicy(Policy::class)]
-class Log extends Model implements Entity
+class Log extends Model
 {
-    use AsEntity;
     use HasFactory;
     use HasUuids;
 
@@ -98,7 +95,7 @@ class Log extends Model implements Entity
         return $this->morphTo();
     }
 
-    public function setEntityAttribute(Entity $entity): void
+    public function setEntityAttribute(Model $entity): void
     {
         $this->attributes['entity_id'] = $entity->getKey();
         $this->attributes['entity_type'] = $entity->getMorphClass();

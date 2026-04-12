@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Support\Entities\Articles\Events;
 
-use Support\Entities\Events\Attributes\Alias;
-use Support\Entities\Events\Provides\EntityDriven;
+use Support\Events\Log\Attributes\Alias;
+use Support\Events\Log\Concerns\SupportsEventLog;
 use Support\Events\Log\Contracts\Recordable;
 use Tests\Fixtures\Support\Entities\Articles\Article;
 
 #[Alias('article.created')]
 final class Created implements Recordable
 {
-    use EntityDriven;
+    use SupportsEventLog;
 
     public readonly Article $entity;
 

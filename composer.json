@@ -10,10 +10,6 @@
             "type": "vcs",
             "url": "https://github.com/AryeoHQ/actions"
         },
-        "entities": {
-            "type": "vcs",
-            "url": "https://github.com/AryeoHQ/entities"
-        },
         "eloquent-filters": {
             "type": "vcs",
             "url": "https://github.com/AryeoHQ/eloquent-filters"
@@ -31,7 +27,6 @@
         "php": "^8.4",
         "laravel/framework": "^12.37",
         "aryeo/actions": "0.0.9",
-        "aryeo/entities": "0.0.14",
         "aryeo/eloquent-state-machines": "dev-customizable-transition-timing as 0.0.13"
     },
     "require-dev": {
@@ -45,7 +40,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Support\\": "src/Support"
+            "Support\\": "src/Support",
+            "Tooling\\": "src/Tooling"
         }
     },
     "autoload-dev": {

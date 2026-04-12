@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Support\Events\Log\Logs\Events;
 
-use Support\Entities\Events\Attributes\Alias;
-use Support\Entities\Events\Contracts\ForEntity;
-use Support\Entities\Events\Provides\EntityDriven;
 use Support\Events\Log\Logs\Log;
 
-#[Alias('event-log.replicating')]
-final class Replicating implements ForEntity
+final class Replicating
 {
-    use EntityDriven;
 
     public readonly Log $entity;
 

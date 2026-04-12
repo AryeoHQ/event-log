@@ -1,0 +1,20 @@
+parameters:
+    ignoreErrors:
+        -
+            identifier: trait.unused
+            paths:
+                - ../../src/Support/Events/Log/Concerns/SupportsEventLog.php
+                - ../../src/Support/Events/Log/Concerns/SerializesModels.php
+services:
+    -
+        class: Tooling\EventLog\PhpStan\RecordableMustHaveAlias
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\RecordableMustHaveSupportsEventLog
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\SupportsEventLogMustUseSerializesModels
+        tags:
+            - phpstan.rules.rule

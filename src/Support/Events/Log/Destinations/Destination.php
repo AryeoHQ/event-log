@@ -12,8 +12,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Support\Entities\Contracts\Entity;
-use Support\Entities\References\Concerns\AsEntity;
 use Support\Events\Log\Destinations\Builder\Builder;
 use Support\Events\Log\Destinations\Collection\Destinations;
 use Support\Events\Log\Destinations\Events;
@@ -33,9 +31,8 @@ use Support\Events\Log\Logs\Log;
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
 #[UsePolicy(Policy::class)]
-class Destination extends Model implements Entity
+class Destination extends Model
 {
-    use AsEntity;
     use HasFactory;
     use HasUuids;
 

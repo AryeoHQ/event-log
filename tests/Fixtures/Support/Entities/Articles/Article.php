@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Support\Entities\Contracts\Entity;
 use Tests\Fixtures\Support\Entities\Articles\Builder\Builder;
 use Tests\Fixtures\Support\Entities\Articles\Collection\Articles;
 use Tests\Fixtures\Support\Entities\Articles\Factory\Factory;
@@ -21,7 +20,7 @@ use Tests\Fixtures\Support\Entities\Articles\Policy\Policy;
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
 #[UsePolicy(Policy::class)]
-class Article extends Model implements Entity
+class Article extends Model
 {
     /** @use HasFactory<Factory> */
     use HasFactory;

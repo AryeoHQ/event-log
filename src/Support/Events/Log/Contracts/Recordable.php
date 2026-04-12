@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace Support\Events\Log\Contracts;
 
-use Support\Entities\Events\Contracts\ForEntity;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Stringable;
 
-interface Recordable extends ForEntity {}
+interface Recordable
+{
+    public Model $entity { get; }
+
+    public Stringable $alias { get; }
+
+    public Stringable $uniqueAlias { get; }
+}

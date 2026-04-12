@@ -1,9 +1,11 @@
 <?php
 
+use Support\Events\Log\Concerns\SupportsEventLog;
+use Support\Events\Log\Contracts\Recordable;
 use Support\Http\Resources\Schemas\Contracts\Schema;
+use Support\Http\Resources\Schemas\Provides\AsSchema;
 use Tooling\Rector\Rules\AddInterfaceByTrait;
 use Tooling\Rector\Rules\AddTraitByInterface;
-use Support\Http\Resources\Schemas\Provides\AsSchema;
 
 return [
     AddInterfaceByTrait::class => [
@@ -11,5 +13,6 @@ return [
     ],
     AddTraitByInterface::class => [
         Schema::class => AsSchema::class,
+        Recordable::class => SupportsEventLog::class,
     ],
 ];
