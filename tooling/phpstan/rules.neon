@@ -1,0 +1,33 @@
+parameters:
+    stubFiles:
+        - stubs/EventDispatcher.stub
+    ignoreErrors:
+        -
+            identifier: trait.unused
+            paths:
+                - ../../src/Support/Events/Log/Concerns/SerializesModels.php
+        -
+            identifier: match.alwaysFalse
+            paths:
+                - ../../src/Support/Events/Log/Concerns/SerializesModels.php
+services:
+    -
+        class: Tooling\EventLog\PhpStan\RecordableMustHaveAlias
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\RecordableMustUseHasLoggable
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\HasLoggableMustUseSerializesModels
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\HasLoggableMustImplementRecordable
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\RecordableMustNotOverrideSerialization
+        tags:
+            - phpstan.rules.rule
