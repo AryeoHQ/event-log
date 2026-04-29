@@ -1,0 +1,15 @@
+<?php
+
+namespace Illuminate\Events;
+
+/**
+ * @method mixed withoutSerializesModels(string|list<string>|\Closure $events, ?\Closure $callback = null)
+ */
+class Dispatcher {}
+
+namespace Illuminate\Support\Facades;
+
+/**
+ * @method static mixed withoutSerializesModels(string|list<string>|\Closure $events, ?\Closure $callback = null)
+ */
+class Event extends Facade {}
