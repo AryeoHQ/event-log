@@ -28,11 +28,6 @@ trait ForwardsCalls
         $this->decorated->subscribe($subscriber);
     }
 
-    public function until($event, $payload = [])
-    {
-        return $this->decorated->until($event, $payload);
-    }
-
     /**
      * @param  string  $event
      * @param  array<mixed>  $payload
