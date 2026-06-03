@@ -12,6 +12,7 @@ use Support\Events\Log\Dispatcher\Concerns\ForwardsCalls;
 use Support\Events\Log\Logs\Log;
 use Tests\Fixtures\Support\Entities\Articles\Article;
 use Tests\Fixtures\Support\Entities\Articles\Events\Updated;
+use Tests\Fixtures\Support\Entities\Articles\Events\Updating;
 use Tests\Fixtures\Support\Entities\Articles\Events\Viewed;
 use Tests\TestCase;
 
@@ -65,5 +66,42 @@ final class DispatcherTest extends TestCase
         Event::dispatch(new Updated(Article::factory()->create()));
 
         $this->assertSame(1, $logsAtListenerTime);
+    }
+
+    #[Test]
+    public function it_records_recordable_halting_events(): void
+    {
+        $article = Article::factory()->create();
+
+        Event::until(new Updating($article));
+
+        $this->assertCount(1, Log::all());
+    }
+
+    #[Test]
+    public function it_ignores_non_recordable_halting_events(): void
+    {
+        $article = Article::factory()->create();
+
+        Event::until(new Viewed($article));
+
+        $this->assertEmpty(Log::all());
+    }
+
+    #[Test]
+    public function it_retains_halting_listener_pipeline(): void
+    {
+        $called = false;
+
+        Event::listen(Updating::class, function () use (&$called) {
+            $called = true;
+
+            return false;
+        });
+
+        $result = Event::until(new Updating(Article::factory()->create()));
+
+        $this->assertTrue($called);
+        $this->assertFalse($result);
     }
 }

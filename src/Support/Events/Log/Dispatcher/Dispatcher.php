@@ -6,7 +6,7 @@ namespace Support\Events\Log\Dispatcher;
 
 use Support\Events\Log\Actions\LogEvent;
 
-class Dispatcher implements \Illuminate\Contracts\Events\Dispatcher
+final class Dispatcher implements \Illuminate\Contracts\Events\Dispatcher
 {
     use Concerns\ForwardsCalls;
 
@@ -25,8 +25,20 @@ class Dispatcher implements \Illuminate\Contracts\Events\Dispatcher
      */
     public function dispatch($event, $payload = [], $halt = false)
     {
-        rescue(fn () => LogEvent::make($event)->now(), report: true);
+        $this->record($event);
 
         return $this->decorated->dispatch($event, $payload, $halt);
+    }
+
+    public function until($event, $payload = [])
+    {
+        $this->record($event);
+
+        return $this->decorated->until($event, $payload);
+    }
+
+    private function record(string|object $event): void
+    {
+        rescue(fn () => LogEvent::make($event)->now(), report: true);
     }
 }
