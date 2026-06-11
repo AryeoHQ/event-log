@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use Support\Events\Log\Exceptions\IntegrityViolation;
+use Support\Events\Log\Logs\Integrity\Corrupted;
+use Support\Events\Log\Logs\Integrity\Tampered;
 use Tests\Fixtures\Support\Entities\Articles\Article;
 use Tests\Fixtures\Support\Entities\Articles\Events\Updated;
 use Tests\Fixtures\Support\Entities\Articles\Events\Updating;
@@ -50,10 +51,8 @@ final class LogTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_when_event_payload_is_tampered(): void
+    public function it_returns_tampered_when_event_payload_is_tampered(): void
     {
-        $this->expectException(IntegrityViolation::class);
-
         $log = Log::create([
             'event' => new Updated(Article::factory()->create()),
             'context' => Context::getFacadeRoot(),
@@ -67,7 +66,22 @@ final class LogTest extends TestCase
         );
         $log->setRawAttributes(array_merge($log->getAttributes(), ['event' => $tampered]));
 
-        $log->event; // @phpstan-ignore expr.resultUnused
+        $this->assertInstanceOf(Tampered::class, $log->event);
+    }
+
+    #[Test]
+    public function it_returns_corrupted_when_event_payload_is_not_valid_base64(): void
+    {
+        $log = Log::create([
+            'event' => new Updated(Article::factory()->create()),
+            'context' => Context::getFacadeRoot(),
+            'idempotency_key' => Str::uuid7()->toString(),
+            'occurred_at' => now(),
+        ]);
+
+        $log->setRawAttributes(array_merge($log->getAttributes(), ['event' => '!!!not-base64!!!']));
+
+        $this->assertInstanceOf(Corrupted::class, $log->event);
     }
 
     #[Test]
