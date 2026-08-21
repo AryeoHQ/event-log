@@ -10,10 +10,10 @@ use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Events\Log\Dispatcher\Concerns\ForwardsCalls;
 use Support\Events\Log\Logs\Log;
-use Tests\Fixtures\Support\Entities\Articles\Article;
-use Tests\Fixtures\Support\Entities\Articles\Events\Updated;
-use Tests\Fixtures\Support\Entities\Articles\Events\Updating;
-use Tests\Fixtures\Support\Entities\Articles\Events\Viewed;
+use Tests\Fixtures\Support\Entities\Recordable\Events\Creating;
+use Tests\Fixtures\Support\Entities\Recordable\Events\Updated;
+use Tests\Fixtures\Support\Entities\Recordable\Recordable;
+use Tests\Fixtures\Tooling\EventLog\RecordableWithoutAlias;
 use Tests\TestCase;
 
 #[CoversClass(Dispatcher::class)]
@@ -23,9 +23,7 @@ final class DispatcherTest extends TestCase
     #[Test]
     public function it_records_recordable_events(): void
     {
-        $article = Article::factory()->create();
-
-        Event::dispatch(new Updated($article));
+        Recordable::factory()->create()->announceToLog();
 
         $this->assertCount(1, Log::all());
     }
@@ -33,9 +31,9 @@ final class DispatcherTest extends TestCase
     #[Test]
     public function it_ignores_non_recordable_events(): void
     {
-        $article = Article::factory()->create();
+        $recordable = Recordable::factory()->create();
 
-        Event::dispatch(new Viewed($article));
+        Event::dispatch(new Creating($recordable));
 
         $this->assertEmpty(Log::all());
     }
@@ -49,7 +47,7 @@ final class DispatcherTest extends TestCase
             $called = true;
         });
 
-        Event::dispatch(new Updated(Article::factory()->create()));
+        Recordable::factory()->create()->announceToLog();
 
         $this->assertTrue($called);
     }
@@ -63,17 +61,32 @@ final class DispatcherTest extends TestCase
             $logsAtListenerTime = Log::count();
         });
 
-        Event::dispatch(new Updated(Article::factory()->create()));
+        Recordable::factory()->create()->announceToLog();
 
         $this->assertSame(1, $logsAtListenerTime);
     }
 
     #[Test]
+    public function it_retains_listener_pipeline_when_recording_fails(): void
+    {
+        $called = false;
+
+        Event::listen(RecordableWithoutAlias::class, function () use (&$called) {
+            $called = true;
+        });
+
+        Event::dispatch(new RecordableWithoutAlias(Recordable::factory()->create()));
+
+        $this->assertTrue($called);
+        $this->assertCount(0, Log::all());
+    }
+
+    #[Test]
     public function it_records_recordable_halting_events(): void
     {
-        $article = Article::factory()->create();
+        $recordable = Recordable::factory()->create();
 
-        Event::until(new Updating($article));
+        Event::until(new Updated($recordable));
 
         $this->assertCount(1, Log::all());
     }
@@ -81,9 +94,9 @@ final class DispatcherTest extends TestCase
     #[Test]
     public function it_ignores_non_recordable_halting_events(): void
     {
-        $article = Article::factory()->create();
+        $recordable = Recordable::factory()->create();
 
-        Event::until(new Viewed($article));
+        Event::until(new Creating($recordable));
 
         $this->assertEmpty(Log::all());
     }
@@ -93,13 +106,13 @@ final class DispatcherTest extends TestCase
     {
         $called = false;
 
-        Event::listen(Updating::class, function () use (&$called) {
+        Event::listen(Updated::class, function () use (&$called) {
             $called = true;
 
             return false;
         });
 
-        $result = Event::until(new Updating(Article::factory()->create()));
+        $result = Event::until(new Updated(Recordable::factory()->create()));
 
         $this->assertTrue($called);
         $this->assertFalse($result);

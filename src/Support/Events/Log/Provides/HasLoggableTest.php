@@ -12,11 +12,12 @@ use ReflectionProperty;
 use Support\Events\Log\Alias;
 use Support\Events\Log\Contracts\Loggable;
 use Support\Events\Log\IdentifiesLoggable;
-use Tests\Fixtures\Support\Entities\Articles\Article;
-use Tests\Fixtures\Support\Entities\Articles\Events\Updated;
+use Tests\Fixtures\Support\Entities\Recordable\Events\Updated;
+use Tests\Fixtures\Support\Entities\Recordable\Recordable;
 use Tests\Fixtures\Tooling\EventLog\HasLoggableWithInvalidIdentifiesLoggableType;
 use Tests\Fixtures\Tooling\EventLog\HasLoggableWithMultipleIdentifiesLoggableAttributes;
 use Tests\Fixtures\Tooling\EventLog\HasLoggableWithoutIdentifiesLoggableAttribute;
+use Tests\Fixtures\Tooling\EventLog\RecordableWithMultiSegmentAlias;
 use Tests\Fixtures\Tooling\EventLog\RecordableWithoutAlias;
 use Tests\TestCase;
 
@@ -42,18 +43,18 @@ final class HasLoggableTest extends TestCase
     #[Test]
     public function it_exposes_the_loggable(): void
     {
-        $article = Article::factory()->make();
+        $recordable = Recordable::factory()->make();
 
-        $event = new Updated($article);
+        $event = new Updated($recordable);
 
         $this->assertInstanceOf(Loggable::class, $event->loggable);
-        $this->assertSame($article, $event->loggable);
+        $this->assertSame($recordable, $event->loggable);
     }
 
     #[Test]
     public function it_is_the_same_memory_address_for_loggable_and_identifies_loggable_property(): void
     {
-        $event = new Updated(Article::factory()->make());
+        $event = new Updated(Recordable::factory()->make());
 
         $this->assertSame($event->loggable, $event->{$event->loggableProperty});
     }
@@ -61,9 +62,29 @@ final class HasLoggableTest extends TestCase
     #[Test]
     public function it_derives_alias_from_attribute(): void
     {
-        $event = new Updated(Article::factory()->make());
+        $event = new Updated(Recordable::factory()->make());
 
-        $this->assertSame('article.updated', $event->alias->toString());
+        $this->assertSame('recordable.updated', $event->alias->toString());
+    }
+
+    #[Test]
+    public function it_injects_the_loggable_key_before_the_last_alias_segment(): void
+    {
+        $recordable = Recordable::factory()->create();
+
+        $event = new Updated($recordable);
+
+        $this->assertSame("recordable.{$recordable->getKey()}.updated", $event->uniqueAlias->toString());
+    }
+
+    #[Test]
+    public function it_injects_the_loggable_key_only_before_the_last_segment_of_a_multi_segment_alias(): void
+    {
+        $recordable = Recordable::factory()->create();
+
+        $event = new RecordableWithMultiSegmentAlias($recordable);
+
+        $this->assertSame("recordable.title.{$recordable->getKey()}.updated", $event->uniqueAlias->toString());
     }
 
     #[Test]
@@ -71,7 +92,7 @@ final class HasLoggableTest extends TestCase
     {
         $this->expectException(Alias\Exceptions\NotDefined::class);
 
-        $event = new RecordableWithoutAlias(Article::factory()->make());
+        $event = new RecordableWithoutAlias(Recordable::factory()->make());
         $event->alias; // @phpstan-ignore expr.resultUnused
     }
 
@@ -127,7 +148,7 @@ final class HasLoggableTest extends TestCase
     #[Test]
     public function it_always_evaluates_loggable_property_lookup(): void
     {
-        $event = new Updated(Article::factory()->make());
+        $event = new Updated(Recordable::factory()->make());
         $property = new ReflectionProperty($event, 'loggableProperty');
 
         $this->assertNotEmpty(

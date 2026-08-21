@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Support\Events\Log\Concerns;
 
-use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Contracts\Support\Jsonable;
+use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Support\Facades\Event;
-use JsonSerializable;
 use Support\Events\Log\Contracts\Recordable;
 use Support\Events\Log\Logs\Integrity\Corrupted;
 use Support\Events\Log\Logs\Integrity\Tampered;
@@ -15,25 +13,17 @@ use Support\Events\Log\Logs\Integrity\Tampered;
 trait HasEvent
 {
     private string $signingKey {
-        get => $this->signingKey ??= config('app.key', '');
+        get => $this->signingKey ??= config('app.key') ?? throw new MissingAppKeyException;
     }
 
     public function setEventAttribute(Recordable $event): void
     {
         $this->attributes['event'] = $this->prepareEvent($event);
 
-        $data = $event->loggable->toLoggable();
-
         $this->forceFill([
             'type' => $this->event->alias,
             'loggable' => $this->event->loggable,
-            'data' => match (true) {
-                $data instanceof JsonSerializable => $data->jsonSerialize(),
-                $data instanceof Jsonable => json_decode($data->toJson(), true),
-                $data instanceof Arrayable => $data->toArray(),
-                is_array($data) => $data,
-                default => iterator_to_array($data),
-            },
+            'data' => $event->loggable->toLoggable(),
         ]);
     }
 

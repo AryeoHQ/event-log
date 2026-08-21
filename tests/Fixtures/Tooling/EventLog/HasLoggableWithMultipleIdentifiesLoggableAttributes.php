@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Tooling\EventLog;
 
-use Support\Events\Log\Contracts\Recordable;
-use Support\Events\Log\IdentifiesLoggable\IdentifiesLoggable;
-use Support\Events\Log\Provides\HasLoggable;
-use Tests\Fixtures\Support\Entities\Articles\Article;
+use Support\Events\Log;
+use Tests\Fixtures\Support\Entities\Recordable\Recordable;
 
-final class HasLoggableWithMultipleIdentifiesLoggableAttributes implements Recordable
+final class HasLoggableWithMultipleIdentifiesLoggableAttributes implements Log\Contracts\Recordable
 {
-    use HasLoggable;
+    use Log\Provides\HasLoggable;
 
-    #[IdentifiesLoggable]
-    public readonly Article $first;
+    #[Log\IdentifiesLoggable\IdentifiesLoggable]
+    public readonly Recordable $first;
 
-    #[IdentifiesLoggable]
-    public readonly Article $second;
+    #[Log\IdentifiesLoggable\IdentifiesLoggable]
+    public readonly Recordable $second;
 
     public function __construct() {}
 }

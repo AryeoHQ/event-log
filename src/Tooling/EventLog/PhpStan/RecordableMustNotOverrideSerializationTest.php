@@ -40,11 +40,11 @@ final class RecordableMustNotOverrideSerializationTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('EventLog/RecordableWithSerializationOverride.php')], [
             [
                 class_basename(Recordable::class).' must not override __serialize().',
-                14,
+                12,
             ],
             [
                 class_basename(Recordable::class).' must not override __unserialize().',
-                14,
+                12,
             ],
         ]);
     }

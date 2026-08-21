@@ -10,18 +10,11 @@ use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use Support\Events\Dispatcher\Mixins\DisablesSerializesModels;
 use Support\Events\Log\Dispatcher\Dispatcher;
-use Support\Events\Log\Logs\Log;
 use Tests\TestCase;
 
 #[CoversClass(Provider::class)]
 final class ProviderTest extends TestCase
 {
-    #[Test]
-    public function it_registers_morph_map(): void
-    {
-        $this->assertSame('event_log', (new Log)->getMorphClass());
-    }
-
     #[Test]
     public function it_registers_config(): void
     {

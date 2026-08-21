@@ -8,11 +8,11 @@ use Illuminate\Contracts\Database\ModelIdentifier;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\Fixtures\Support\Entities\Articles\Article;
-use Tests\Fixtures\Support\Entities\Articles\Events\Updated;
-use Tests\Fixtures\Support\Entities\Tags\Events\DisablesModelSerialization;
-use Tests\Fixtures\Support\Entities\Tags\Events\DisablesModelSerializationThroughInterface;
-use Tests\Fixtures\Support\Entities\Tags\Tag;
+use Tests\Fixtures\Support\Entities\DisablesModelSerialization\Events\DisablesModelSerialization;
+use Tests\Fixtures\Support\Entities\DisablesModelSerializationThroughInterface\Events\DisablesModelSerializationThroughInterface;
+use Tests\Fixtures\Support\Entities\NonRecordable\NonRecordable;
+use Tests\Fixtures\Support\Entities\Recordable\Events\Updated;
+use Tests\Fixtures\Support\Entities\Recordable\Recordable;
 use Tests\TestCase;
 
 #[CoversClass(DisablesSerializesModels::class)]
@@ -24,11 +24,11 @@ final class DisablesSerializesModelsTest extends TestCase
         $serialized = null;
 
         Event::withoutSerializesModels(function () use (&$serialized) {
-            $event = new Updated(Article::factory()->make());
+            $event = new Updated(Recordable::factory()->make());
             $serialized = $event->__serialize();
         });
 
-        $this->assertSame('article', data_get($serialized, 'loggableProperty'));
+        $this->assertSame('recordable', data_get($serialized, 'loggableProperty'));
     }
 
     #[Test]
@@ -37,21 +37,21 @@ final class DisablesSerializesModelsTest extends TestCase
         $serialized = null;
 
         Event::withoutSerializesModels(function () use (&$serialized) {
-            $event = new Updated(Article::factory()->make());
+            $event = new Updated(Recordable::factory()->make());
             $serialized = $event->__serialize();
         });
 
         $loggableProperty = data_get($serialized, 'loggableProperty');
 
-        $this->assertInstanceOf(Article::class, data_get($serialized, $loggableProperty));
+        $this->assertInstanceOf(Recordable::class, data_get($serialized, $loggableProperty));
     }
 
     #[Test]
     public function it_returns_the_closure_result(): void
     {
-        $article = Article::factory()->make();
+        $recordable = Recordable::factory()->make();
 
-        $event = Event::withoutSerializesModels(fn () => new Updated($article));
+        $event = Event::withoutSerializesModels(fn () => new Updated($recordable));
 
         $this->assertInstanceOf(Updated::class, $event);
     }
@@ -63,7 +63,7 @@ final class DisablesSerializesModelsTest extends TestCase
             // noop
         });
 
-        $event = new Updated(Article::factory()->make());
+        $event = new Updated(Recordable::factory()->make());
         $serialized = $event->__serialize();
 
         $this->assertInstanceOf(
@@ -83,7 +83,7 @@ final class DisablesSerializesModelsTest extends TestCase
             // expected
         }
 
-        $event = new Updated(Article::factory()->make());
+        $event = new Updated(Recordable::factory()->make());
         $serialized = $event->__serialize();
 
         $this->assertInstanceOf(
@@ -98,12 +98,12 @@ final class DisablesSerializesModelsTest extends TestCase
         $serialized = null;
 
         Event::withoutSerializesModels(DisablesModelSerialization::class, function () use (&$serialized) {
-            $event = new DisablesModelSerialization(Tag::factory()->make());
+            $event = new DisablesModelSerialization(NonRecordable::factory()->make());
             $serialized = $event->__serialize();
         });
 
         $this->assertInstanceOf(
-            Tag::class,
+            NonRecordable::class,
             data_get($serialized, data_get($serialized, 'loggableProperty')),
         );
     }
@@ -114,7 +114,7 @@ final class DisablesSerializesModelsTest extends TestCase
         $serialized = null;
 
         Event::withoutSerializesModels(DisablesModelSerialization::class, function () use (&$serialized) {
-            $event = new Updated(Article::factory()->make());
+            $event = new Updated(Recordable::factory()->make());
             $serialized = $event->__serialize();
         });
 
@@ -133,17 +133,17 @@ final class DisablesSerializesModelsTest extends TestCase
         Event::withoutSerializesModels(
             [DisablesModelSerialization::class, DisablesModelSerializationThroughInterface::class],
             function () use (&$first, &$second) {
-                $first = (new DisablesModelSerialization(Tag::factory()->make()))->__serialize();
-                $second = (new DisablesModelSerializationThroughInterface(Tag::factory()->make()))->__serialize();
+                $first = (new DisablesModelSerialization(NonRecordable::factory()->make()))->__serialize();
+                $second = (new DisablesModelSerializationThroughInterface(NonRecordable::factory()->make()))->__serialize();
             },
         );
 
         $this->assertInstanceOf(
-            Tag::class,
+            NonRecordable::class,
             data_get($first, data_get($first, 'loggableProperty')),
         );
         $this->assertInstanceOf(
-            Tag::class,
+            NonRecordable::class,
             data_get($second, data_get($second, 'loggableProperty')),
         );
     }
@@ -154,12 +154,12 @@ final class DisablesSerializesModelsTest extends TestCase
         $serialized = null;
 
         Event::withoutSerializesModels(\Stringable::class, function () use (&$serialized) {
-            $event = new DisablesModelSerializationThroughInterface(Tag::factory()->make());
+            $event = new DisablesModelSerializationThroughInterface(NonRecordable::factory()->make());
             $serialized = $event->__serialize();
         });
 
         $this->assertInstanceOf(
-            Tag::class,
+            NonRecordable::class,
             data_get($serialized, data_get($serialized, 'loggableProperty')),
         );
     }
@@ -170,7 +170,7 @@ final class DisablesSerializesModelsTest extends TestCase
         $serialized = null;
 
         Event::withoutSerializesModels(\Stringable::class, function () use (&$serialized) {
-            $event = new Updated(Article::factory()->make());
+            $event = new Updated(Recordable::factory()->make());
             $serialized = $event->__serialize();
         });
 
@@ -187,7 +187,7 @@ final class DisablesSerializesModelsTest extends TestCase
             // noop
         });
 
-        $event = new DisablesModelSerialization(Tag::factory()->make());
+        $event = new DisablesModelSerialization(NonRecordable::factory()->make());
         $serialized = $event->__serialize();
 
         $this->assertInstanceOf(
