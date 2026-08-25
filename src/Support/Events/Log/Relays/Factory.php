@@ -24,22 +24,16 @@ final class Factory extends EloquentFactory
 
     public function locked(): self
     {
-        return $this->state(fn () => [
-            'status' => Status::Locked,
-        ]);
+        return $this->state(['status' => Status::Locked]);
     }
 
     public function processed(): self
     {
-        return $this->state(fn () => [
-            'status' => Status::Processed,
-        ]);
+        return $this->state(['status' => Status::Processed]);
     }
 
     public function failed(): self
     {
-        return $this->state(fn () => [
-            'status' => Status::Failed,
-        ]);
+        return $this->state(['status' => Status::Failed]);
     }
 }
