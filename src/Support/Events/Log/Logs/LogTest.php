@@ -69,6 +69,24 @@ final class LogTest extends TestCase
     }
 
     #[Test]
+    public function it_verifies_event_signed_with_a_rotated_key(): void
+    {
+        $log = Log::factory()->state([
+            'event' => new Updated(Recordable::factory()->create()),
+            'context' => Context::getFacadeRoot(),
+            'idempotency_key' => Str::uuid7()->toString(),
+            'occurred_at' => now(),
+        ])->create();
+
+        tap(config('app.key'), function (string $oldKey): void {
+            config(['app.key' => 'base64:'.base64_encode(random_bytes(32))]);
+            config(['app.previous_keys' => [$oldKey]]);
+        });
+
+        $this->assertInstanceOf(Updated::class, $log->fresh()->event);
+    }
+
+    #[Test]
     #[WithConfig('app.key', null)]
     public function it_throws_when_no_signing_key_is_set(): void
     {

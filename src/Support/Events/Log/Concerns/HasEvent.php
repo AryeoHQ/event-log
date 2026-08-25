@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Support\Events\Log\Concerns;
 
 use Illuminate\Encryption\MissingAppKeyException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
 use Support\Events\Log\Contracts\Recordable;
 use Support\Events\Log\Logs\Integrity\Corrupted;
@@ -14,6 +15,16 @@ trait HasEvent
 {
     private string $signingKey {
         get => $this->signingKey ??= config('app.key') ?? throw new MissingAppKeyException;
+    }
+
+    /** @var list<string> */
+    private array $previousSigningKeys {
+        get => $this->previousSigningKeys ??= config('app.previous_keys', []);
+    }
+
+    /** @var \Illuminate\Support\Collection<int, string> */
+    private Collection $signingKeys {
+        get => $this->signingKeys ??= collect([$this->signingKey, ...$this->previousSigningKeys]);
     }
 
     public function setEventAttribute(Recordable $event): void
@@ -78,10 +89,9 @@ trait HasEvent
         $signature = substr($value, 0, 64);
         $serialized = substr($value, 64);
 
-        if (! hash_equals($signature, hash_hmac('sha256', $serialized, $this->signingKey))) {
-            return new Tampered($value);
-        }
-
-        return $serialized;
+        return match ($this->signingKeys->contains(fn (string $key) => hash_equals($signature, hash_hmac('sha256', $serialized, $key)))) {
+            true => $serialized,
+            false => new Tampered($value),
+        };
     }
 }
