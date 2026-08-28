@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('event_log_deliveries', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->uuid('event_log_relay_id')->index();
+            $table->foreignUuid('event_log_relay_id')->index()->constrained('event_log_relays');
 
             // Declared manually (over uuidMorphs) in favor of a wider composite manually defined below
             $table->string('recipient_type');

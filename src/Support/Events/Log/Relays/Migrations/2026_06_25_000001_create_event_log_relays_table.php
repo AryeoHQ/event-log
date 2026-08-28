@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('event_log_relays', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->uuid('event_log_id')->index();
+            $table->foreignUuid('event_log_id')->index()->constrained('event_logs');
             $table->string('transport');
             $table->string('status');
             $table->timestampsTz();
