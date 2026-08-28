@@ -14,9 +14,9 @@ return new class extends Migration
     {
         Schema::create('event_log_deliveries', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('event_log_relay_id')->index()->constrained('event_log_relays');
+            $table->foreignUuid('event_log_relay_id')->constrained('event_log_relays');
 
-            // Declared manually (over uuidMorphs) in favor of a wider composite manually defined below
+            // Declared manually (over uuidMorphs) in favor of wider composites manually defined below
             $table->string('recipient_type');
             $table->uuid('recipient_id');
 
@@ -25,7 +25,8 @@ return new class extends Migration
             $table->string('status');
             $table->timestampsTz();
 
-            $table->index(['recipient_type', 'recipient_id', 'id']);
+            $table->index(['event_log_relay_id', 'recipient_type', 'recipient_id', 'version']); // firstOrCreate identity; leading column covers plain FK lookups
+            $table->index(['recipient_type', 'recipient_id', 'status', 'id']); // recipient-scoped lookups, optionally filtered by status, with cursor pagination
             $table->index(['status', 'updated_at']); // Watchdog stuck() sweep
         });
     }
