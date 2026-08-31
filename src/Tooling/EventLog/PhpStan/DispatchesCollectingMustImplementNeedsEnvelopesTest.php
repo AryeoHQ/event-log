@@ -39,4 +39,15 @@ final class DispatchesCollectingMustImplementNeedsEnvelopesTest extends RuleTest
             ],
         ]);
     }
+
+    #[Test]
+    public function it_fails_when_collecting_uses_positional_arguments(): void
+    {
+        $this->analyse([$this->getFixturePath('EventLog/RelayableWithPositionalInvalidDispatches.php')], [
+            [
+                'Collecting event ['.class_basename(CollectsEnvelopesWithoutNeedsEnvelopes::class).'] must implement '.class_basename(NeedsEnvelopes::class).'.',
+                11,
+            ],
+        ]);
+    }
 }

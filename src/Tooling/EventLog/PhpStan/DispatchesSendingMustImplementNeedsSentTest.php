@@ -39,4 +39,15 @@ final class DispatchesSendingMustImplementNeedsSentTest extends RuleTestCase
             ],
         ]);
     }
+
+    #[Test]
+    public function it_fails_when_sending_uses_positional_arguments(): void
+    {
+        $this->analyse([$this->getFixturePath('EventLog/RelayableWithPositionalInvalidDispatches.php')], [
+            [
+                'Sending event ['.class_basename(RecordsResultWithoutNeedsSent::class).'] must implement '.class_basename(NeedsSent::class).'.',
+                11,
+            ],
+        ]);
+    }
 }

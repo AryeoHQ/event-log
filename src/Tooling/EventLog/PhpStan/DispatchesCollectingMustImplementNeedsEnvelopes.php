@@ -35,7 +35,7 @@ final class DispatchesCollectingMustImplementNeedsEnvelopes extends Rule
      */
     public function handle(Node $node, Scope $scope): void
     {
-        $class = $this->resolveNamedArg($node, 'collecting', $scope);
+        $class = $this->resolveArg($node, $scope);
 
         if ($class === null) {
             return;
@@ -50,7 +50,7 @@ final class DispatchesCollectingMustImplementNeedsEnvelopes extends Rule
         }
     }
 
-    private function resolveNamedArg(Interface_ $node, string $name, Scope $scope): null|string
+    private function resolveArg(Interface_ $node, Scope $scope): null|string
     {
         foreach ($node->attrGroups as $attrGroup) {
             foreach ($attrGroup->attrs as $attr) {
@@ -58,8 +58,10 @@ final class DispatchesCollectingMustImplementNeedsEnvelopes extends Rule
                     continue;
                 }
 
-                foreach ($attr->args as $arg) {
-                    if ($arg->name?->toString() === $name && $arg->value instanceof ClassConstFetch && $arg->value->class instanceof Name) {
+                foreach ($attr->args as $index => $arg) {
+                    $matches = $arg->name?->toString() === 'collecting' || ($arg->name === null && $index === 0);
+
+                    if ($matches && $arg->value instanceof ClassConstFetch && $arg->value->class instanceof Name) {
                         return $scope->resolveName($arg->value->class);
                     }
                 }
