@@ -54,6 +54,14 @@ services:
         tags:
             - phpstan.rules.rule
     -
+        class: Tooling\EventLog\PhpStan\TransportMustUseHasRelays
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\HasRelaysMustImplementTransport
+        tags:
+            - phpstan.rules.rule
+    -
         class: Tooling\EventLog\PhpStan\DispatchesCollectingMustImplementNeedsEnvelopes
         tags:
             - phpstan.rules.rule
