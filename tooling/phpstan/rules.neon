@@ -33,3 +33,51 @@ services:
         class: Tooling\EventLog\PhpStan\RecordableMustNotOverrideSerialization
         tags:
             - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\TransportMustHaveDispatches
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\NeedsEnvelopesMustUseCollectsEnvelopes
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\CollectsEnvelopesMustImplementNeedsEnvelopes
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\NeedsSentMustUseRecordsResult
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\RecordsResultMustImplementNeedsSent
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\TransportMustUseHasRelays
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\HasRelaysMustImplementTransport
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\DispatchesCollectingMustImplementNeedsEnvelopes
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\DispatchesSendingMustImplementNeedsSent
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\RecordableMustHaveIdentifiesLoggable
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\RecordableMustHaveSingleIdentifiesLoggable
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\IdentifiesLoggableMustBeLoggableModel
+        tags:
+            - phpstan.rules.rule

@@ -9,14 +9,19 @@
         "actions": {
             "type": "vcs",
             "url": "https://github.com/AryeoHQ/actions"
+        },
+        "eloquent-state-machine": {
+            "type": "vcs",
+            "url": "https://github.com/AryeoHQ/eloquent-state-machine"
         }
     },
     "require": {
         "php": "^8.4",
         "laravel/framework": "^12.37",
-        "aryeo/actions": "0.0.14",
+        "aryeo/actions": "0.0.21",
+        "aryeo/eloquent-state-machines": "0.0.30",
         "nesbot/carbon": "^3.11",
-        "aryeo/tooling-laravel": "0.0.37",
+        "aryeo/tooling-laravel": "0.0.39",
         "phpstan/phpstan": "^2.1",
         "nikic/php-parser": "^5.0"
     },

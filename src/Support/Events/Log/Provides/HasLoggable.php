@@ -36,15 +36,16 @@ trait HasLoggable
     }
 
     /**
-     * This is PURPOSELY initialized as an empty string to guarantee
-     * it will be included when the event is serialized as PHP will
-     * automatically include all initialized properties. However,
-     * we never want the value to actually be an empty string.
-     * Since we are defining a get hook, that is ALWAYS called
-     * no matter how a property is accessed. Since serialization
-     * necessarily reads "initialized" properties we can ensure
-     * that even if this property was never accessed during the
-     * lifecycle of the application the evaluation will be run.
+     * Start this as an empty string so serialization always includes it.
+     *
+     * The `SerializesModels` trait reads each property through reflection
+     * when it serializes the event. That read runs the get hook, which
+     * resolves the property name and stores it. So the resolved name is
+     * locked into the payload, even if nothing read this property before.
+     *
+     * This matters on the queue. An event can wait in the queue while the
+     * code changes. Because the name was locked in at serialize time, the
+     * event still points at the correct property after the code changes.
      */
     public private(set) string $loggableProperty = '' {
         get => $this->loggableProperty ?: $this->loggableProperty = with( // @phpstan-ignore ternary.shortNotAllowed
@@ -71,8 +72,6 @@ trait HasLoggable
     }
 
     public Stringable $uniqueAlias {
-        get => $this->uniqueAlias ??= str(
-            $this->alias->explode('.')->join(".{$this->loggable->getKey()}.")
-        );
+        get => $this->uniqueAlias ??= $this->alias->replaceLast('.', ".{$this->loggable->getKey()}.");
     }
 }

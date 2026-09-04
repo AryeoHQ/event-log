@@ -6,14 +6,12 @@ namespace Support\Events\Log\Context;
 
 use Illuminate\Log\Context\Repository;
 use Illuminate\Support\Facades\Context;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Orchestra\Testbench\Attributes\WithEnv;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Events\Log\Logs\Log;
-use Tests\Fixtures\Support\Entities\Articles\Article;
-use Tests\Fixtures\Support\Entities\Articles\Events\Updated;
+use Tests\Fixtures\Support\Entities\Recordable\Recordable;
 use Tests\TestCase;
 
 #[CoversClass(Whitelisted::class)]
@@ -103,9 +101,9 @@ final class WhitelistedTest extends TestCase
     {
         Context::add('tenant', 'acme');
 
-        $log = Log::make()->forceFill([
+        $log = Log::factory()->state([
             'context' => new Whitelisted,
-        ]);
+        ])->make();
 
         $this->assertIsString($log->getAttributes()['context']);
         $this->assertStringContainsString('tenant', $log->getAttributes()['context']);
@@ -117,9 +115,9 @@ final class WhitelistedTest extends TestCase
     {
         $repository = app(Repository::class)->add(['foo' => 'bar']);
 
-        $log = Log::make()->forceFill([
+        $log = Log::factory()->state([
             'context' => $repository,
-        ]);
+        ])->make();
 
         $this->assertIsString($log->getAttributes()['context']);
         $this->assertStringContainsString('foo', $log->getAttributes()['context']);
@@ -131,9 +129,9 @@ final class WhitelistedTest extends TestCase
     {
         Context::add('tenant', 'acme');
 
-        $log = Log::make()->forceFill([
+        $log = Log::factory()->state([
             'context' => null,
-        ]);
+        ])->make();
 
         $this->assertIsString($log->getAttributes()['context']);
         $this->assertStringContainsString('tenant', $log->getAttributes()['context']);
@@ -144,15 +142,15 @@ final class WhitelistedTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        Log::make()->forceFill([
+        Log::factory()->state([
             'context' => 'not-valid',
-        ]);
+        ])->make();
     }
 
     #[Test]
     public function it_casts_from_json_when_retrieved_from_model(): void
     {
-        $log = Log::make();
+        $log = Log::factory()->make();
         $log->setRawAttributes(['context' => json_encode(['tenant' => 'acme'])]);
 
         $this->assertInstanceOf(Whitelisted::class, $log->context);
@@ -165,17 +163,12 @@ final class WhitelistedTest extends TestCase
     {
         Context::add('tenant_id', '123');
 
-        $log = Log::create([
-            'event' => new Updated(Article::factory()->create()),
-            'context' => Context::getFacadeRoot(),
-            'idempotency_key' => Str::uuid7()->toString(),
-            'occurred_at' => now(),
-        ]);
+        Recordable::factory()->create()->announceToLog();
 
         Context::flush();
         Context::add('request_id', '456');
 
-        $hydrated = $log->fresh()->context;
+        $hydrated = Log::first()->fresh()->context;
 
         $this->assertSame('123', $hydrated->get('tenant_id'));
         $this->assertNull($hydrated->get('request_id'));
@@ -184,7 +177,7 @@ final class WhitelistedTest extends TestCase
     #[Test]
     public function it_casts_null_from_database_as_null(): void
     {
-        $log = Log::make();
+        $log = Log::factory()->make();
         $log->setRawAttributes(['context' => null]);
 
         $this->assertNull($log->context);
