@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "17c2c6f0524d1c5404f6af9c1df6f657",
+    "content-hash": "15b6644ee765a251902bc6f773ce79fd",
     "packages": [
         {
             "name": "aryeo/actions",
@@ -121,16 +121,16 @@
         },
         {
             "name": "aryeo/eloquent-state-machines",
-            "version": "0.0.30",
+            "version": "0.0.31",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AryeoHQ/eloquent-state-machines.git",
-                "reference": "796ceca8d75d79437af6f6b3d25e77ecb102e0c4"
+                "reference": "f8ea01acb96622024c13e11286849c7bec689c1e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AryeoHQ/eloquent-state-machines/zipball/796ceca8d75d79437af6f6b3d25e77ecb102e0c4",
-                "reference": "796ceca8d75d79437af6f6b3d25e77ecb102e0c4",
+                "url": "https://api.github.com/repos/AryeoHQ/eloquent-state-machines/zipball/f8ea01acb96622024c13e11286849c7bec689c1e",
+                "reference": "f8ea01acb96622024c13e11286849c7bec689c1e",
                 "shasum": ""
             },
             "require": {
@@ -221,10 +221,10 @@
             ],
             "description": "A state machine package for Eloquent.",
             "support": {
-                "source": "https://github.com/AryeoHQ/eloquent-state-machines/tree/0.0.30",
+                "source": "https://github.com/AryeoHQ/eloquent-state-machines/tree/0.0.31",
                 "issues": "https://github.com/AryeoHQ/eloquent-state-machines/issues"
             },
-            "time": "2026-08-21T16:16:15+00:00"
+            "time": "2026-09-08T21:52:40+00:00"
         },
         {
             "name": "aryeo/tooling-laravel",
