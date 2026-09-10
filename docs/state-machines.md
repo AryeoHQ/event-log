@@ -117,7 +117,7 @@ it because it is the same on every trigger.
 
 | Trigger | `handle()` | `failed()` | Invoked | Attributes / props |
 |---|---|---|---|---|
-| `Lock` | `process()->dispatch()->afterCommit()` | → `fail()->dispatchAfterFailed()->now()` | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]` |
+| `Lock` | `process()->dispatch()->afterCommit()` | `refresh()`, skip if `isTerminal()`, else `fail()->dispatchAfterFailed()->now()` | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]` |
 | `Process` | if event is a `Transport`, `firstOrCreate` a `Relay` per `event->transports` (keyed on `transport`) | Corrupted/Tampered → `compromise()`, else `fail()` (via `dispatchAfterFailed()`) | `->dispatch()` | `$tries=3`, `$backoff=[5,25]`; `middleware()` returns `WithoutOverlapping` per record |
 | `Compromise` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Fail` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
@@ -127,7 +127,7 @@ it because it is the same on every trigger.
 
 | Trigger | `handle()` | `failed()` | Invoked | Attributes / props |
 |---|---|---|---|---|
-| `Lock` | `process()->dispatch()->afterCommit()` | → `fail()->dispatchAfterFailed()->now()` | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]` |
+| `Lock` | `process()->dispatch()->afterCommit()` | `refresh()`, skip if `isTerminal()`, else `fail()->dispatchAfterFailed()->now()` | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]` |
 | `Process` | reflect `#[Dispatches]` (throw `NotDefined` if absent) + `#[Tries]`; build the collecting event; `event()`; `firstOrCreate` a `Delivery` per envelope (keyed on the envelope identity). The `Dispatches` constructor validates that the collecting class implements `NeedsEnvelopes`. | → `fail()->dispatchAfterFailed()->now()` | `->dispatch()` | `$tries=3`, `$backoff=[5,25]`; `middleware()` returns `WithoutOverlapping` per record |
 | `Fail` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Retry` | `lock()->now()` | none | manual | `#[TransitionDuring(Before)]` |
@@ -136,7 +136,7 @@ it because it is the same on every trigger.
 
 | Trigger | `handle()` | `failed()` | Invoked | Attributes / props |
 |---|---|---|---|---|
-| `Lock` | `process()->dispatch()->afterCommit()` | → `fail()->dispatchAfterFailed()->now()` | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]` |
+| `Lock` | `process()->dispatch()->afterCommit()` | `refresh()`, skip if `isTerminal()`, else `fail()->dispatchAfterFailed()->now()` | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]` |
 | `Process` | `touch()`; if `!is_deliverable` → `disqualify()`; else `attempts()->create()` (catch `Undeliverable` → `disqualify()`); else `succeed()` (all via `dispatchAfterFailed()->now()`) | `Undeliverable` → disqualify, else fail (all via `dispatchAfterFailed()`) | `->dispatch()` | `#[WithoutTransaction]`; dynamic `tries` (= `delivery->tries - attempts_count`) and `backoff` (`5**n`); `middleware()` returns `WithoutOverlapping` per record |
 | `Succeed` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Fail` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
@@ -147,8 +147,8 @@ it because it is the same on every trigger.
 
 | Trigger | `handle()` | `failed()` | Invoked | Attributes / props |
 |---|---|---|---|---|
-| `Lock` | `process()->now()` (no queue boundary) | writes `response`, then `Undeliverable` → disqualify, else fail (via `dispatchAfterFailed()`) | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]`, `#[WithoutTransaction]` |
-| `Process` | reflect `#[Dispatches]`, build the sending event; `event()`; if `result !== null`, `update(['response' => result])`. The `Dispatches` constructor validates that the sending class implements `NeedsSent`. | writes `response`, then `Undeliverable` → disqualify else fail (via `dispatchAfterFailed()`) | `->now()` | `#[WithoutTransaction]` |
+| `Lock` | `process()->now()` (no queue boundary) | `refresh()`, writes `result` (write-once cast blocks if already set), skip transition if `isTerminal()`, else `Undeliverable` → disqualify, else fail (via `dispatchAfterFailed()`) | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]`, `#[WithoutTransaction]` |
+| `Process` | reflect `#[Dispatches]`, build the sending event; `event()` in a `try`/`finally` that writes `result` when recorded. The `Dispatches` constructor validates that the sending class implements `NeedsSent`. | writes `result` as fallback (only if null via `fresh()`), then `Undeliverable` → disqualify else fail (via `dispatchAfterFailed()`) | `->now()` | `#[WithoutTransaction]` |
 | `Fail` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Disqualify` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 

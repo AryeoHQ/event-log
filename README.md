@@ -366,8 +366,8 @@ final class GatherEnvelopes
 
 The sending listener has three possible outcomes:
 
-- **Success** — record a result with `$event->result(...)`. The value is stored
-  on the delivery attempt's `response`.
+- **Success** — record a result with `$event->record(...)`. The value is stored
+  on the delivery attempt's `result` column as a `Result` object.
 - **Retryable failure** — throw `Failed` (or let any exception bubble up). The
   delivery moves to `Failed` and is retried up to the transport's `#[Tries]`
   budget.
@@ -375,7 +375,7 @@ The sending listener has three possible outcomes:
   terminal `Undeliverable` state and is **not** retried.
 
 In both throwing cases the exception message is stored on the attempt's
-`response`.
+`result` as a fallback (only if the listener did not already record one).
 
 ```php
 namespace App\Webhooks\Listeners;
@@ -402,7 +402,7 @@ final class SendWebhook
         // A transient upstream failure — let it retry.
         throw_if($response->serverError(), new Failed("upstream {$response->status()}"));
 
-        $event->result($response->status());
+        $event->record($response->status());
     }
 }
 ```

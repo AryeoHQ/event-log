@@ -52,4 +52,17 @@ return [
          */
         'ttl' => (int) env('EVENT_LOG_LOCKING_TTL', 300),
     ],
+
+    'delivery_attempts' => [
+        'results' => [
+            'messages' => [
+                /*
+                 * How many characters of a Result message to keep. A recipient
+                 * that returns a large body would otherwise write all of it to
+                 * the row.
+                 */
+                'length' => (int) env('EVENT_LOG_DELIVERY_ATTEMPT_RESULT_MESSAGE_LENGTH', 1000),
+            ],
+        ],
+    ],
 ];

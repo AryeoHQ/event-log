@@ -11,6 +11,7 @@ use Support\Database\Eloquent\StateMachines\Triggers\Trigger;
 use Support\Database\Eloquent\StateMachines\Triggers\WithoutTransaction;
 use Support\Events\Log\DeliveryAttempts\DeliveryAttempt;
 use Support\Events\Log\DeliveryAttempts\Exceptions\Undeliverable;
+use Support\Events\Log\Transports\Dispatches\Sending\Results\Result;
 use Throwable;
 
 #[TransitionDuring(Phase::Before)]
@@ -31,11 +32,14 @@ final class Lock extends Trigger
 
     public function failed(Throwable $throwable): void
     {
-        $this->deliveryAttempt->update(['response' => $throwable->getMessage()]);
+        $this->deliveryAttempt->refresh()->update(['result' => Result::make($throwable->getMessage())]);
 
-        match (true) {
-            $throwable instanceof Undeliverable => $this->deliveryAttempt->status->disqualify()->dispatchAfterFailed()->now(),
-            default => $this->deliveryAttempt->status->fail()->dispatchAfterFailed()->now(),
-        };
+        when(
+            ! $this->deliveryAttempt->status->isTerminal(),
+            fn () => match (true) {
+                $throwable instanceof Undeliverable => $this->deliveryAttempt->status->disqualify()->dispatchAfterFailed()->now(),
+                default => $this->deliveryAttempt->status->fail()->dispatchAfterFailed()->now(),
+            }
+        );
     }
 }

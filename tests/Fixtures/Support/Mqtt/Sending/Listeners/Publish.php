@@ -10,6 +10,6 @@ final class Publish
 {
     public function handle(NeedsSent $event): void
     {
-        $event->result('published');
+        $event->record('published');
     }
 }

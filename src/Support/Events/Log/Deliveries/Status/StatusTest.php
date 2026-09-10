@@ -181,7 +181,7 @@ final class StatusTest extends TestCase
         $this->assertCount(3, $attempts);
         $attempts->each(function (DeliveryAttempt $attempt): void {
             $this->assertSame(AttemptStatus::Failed, $attempt->status->enum);
-            $this->assertSame('recipient returned 500', $attempt->response);
+            $this->assertSame('recipient returned 500', $attempt->result->message);
         });
     }
 }

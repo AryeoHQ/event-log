@@ -39,7 +39,7 @@ final class LockTest extends TestCase
         rescue(fn () => $attempt->status->lock()->now(), null, false);
 
         Fail::assertFired();
-        $this->assertSame('lock failed', $attempt->fresh()->response);
+        $this->assertSame('lock failed', $attempt->fresh()->result->message);
     }
 
     #[Test]
@@ -54,6 +54,6 @@ final class LockTest extends TestCase
         rescue(fn () => $attempt->status->lock()->now(), null, false);
 
         Disqualify::assertFired();
-        $this->assertSame('recipient gone', $attempt->fresh()->response);
+        $this->assertSame('recipient gone', $attempt->fresh()->result->message);
     }
 }

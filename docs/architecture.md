@@ -81,7 +81,7 @@ NULL. A delivery always has a recipient.
 | `id` | uuid PK | Primary key |
 | `event_log_delivery_id` | uuid indexed | Foreign key to `event_log_deliveries` |
 | `status` | string | State-machine status |
-| `response` | text nullable | Result or error recorded from the send |
+| `result` | json nullable | `Result` object (code + message) recorded from the send |
 | `attempted_at` | timestampTz nullable | When the attempt ran |
 | `created_at` / `updated_at` | timestampsTz | Row timestamps |
 

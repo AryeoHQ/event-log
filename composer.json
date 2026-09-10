@@ -19,7 +19,7 @@
         "php": "^8.4",
         "laravel/framework": "^12.37",
         "aryeo/actions": "0.0.21",
-        "aryeo/eloquent-state-machines": "0.0.31",
+        "aryeo/eloquent-state-machines": "0.0.32",
         "nesbot/carbon": "^3.11",
         "aryeo/tooling-laravel": "0.0.39",
         "phpstan/phpstan": "^2.1",

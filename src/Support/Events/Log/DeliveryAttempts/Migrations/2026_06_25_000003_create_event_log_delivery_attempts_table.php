@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('event_log_delivery_id')->index()->constrained('event_log_deliveries');
             $table->string('status');
-            $table->text('response')->nullable();
+            $table->json('result')->nullable();
             $table->timestampTz('attempted_at')->nullable();
             $table->timestampsTz();
 

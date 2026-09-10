@@ -41,7 +41,7 @@ final class NeedsSentMustUseRecordsResultTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('EventLog/NeedsSentWithoutRecordsResult.php')], [
             [
                 class_basename(NeedsSent::class).' must use the '.class_basename(RecordsResult::class).' trait.',
-                11,
+                12,
             ],
         ]);
     }

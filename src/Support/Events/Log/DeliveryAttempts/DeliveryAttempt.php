@@ -14,13 +14,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Support\Events\Log\Deliveries\Delivery;
 use Support\Events\Log\DeliveryAttempts\Collection\DeliveryAttempts;
 use Support\Events\Log\DeliveryAttempts\Status\Status;
+use Support\Events\Log\Transports\Dispatches\Sending\Results\Result;
 
 /**
  * @property string $id
  * @property string $delivery_id
  * @property \Support\Events\Log\Deliveries\Delivery $delivery
  * @property \Support\Events\Log\DeliveryAttempts\Status\Status $status
- * @property string|null $response
+ * @property \Support\Events\Log\Transports\Dispatches\Sending\Results\Result|null $result
  * @property \Carbon\CarbonImmutable $attempted_at
  *
  * @phpstan-property \Support\Database\Eloquent\StateMachines\StateMachine<\Support\Events\Log\DeliveryAttempts\Status\Status> $status
@@ -63,12 +64,13 @@ class DeliveryAttempt extends Model
 
     protected $fillable = [
         'event_log_delivery_id',
-        'response',
+        'result',
         'attempted_at',
     ];
 
     protected $casts = [
         'attempted_at' => 'immutable_datetime',
+        'result' => Result::class,
         'status' => Status::class,
     ];
 

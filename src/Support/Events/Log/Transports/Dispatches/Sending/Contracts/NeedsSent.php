@@ -6,6 +6,7 @@ namespace Support\Events\Log\Transports\Dispatches\Sending\Contracts;
 
 use Stringable;
 use Support\Events\Log\Deliveries\Delivery;
+use Support\Events\Log\Transports\Dispatches\Sending\Results\Result;
 
 interface NeedsSent
 {
@@ -13,7 +14,7 @@ interface NeedsSent
 
     public string $idempotencyKey { get; }
 
-    public null|string|Stringable $result { get; }
+    public null|Result $result { get; }
 
-    public function result(string|Stringable $result): static;
+    public function record(Result|string|Stringable $result): static;
 }

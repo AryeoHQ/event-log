@@ -27,6 +27,9 @@ final class Lock extends Trigger
 
     public function failed(): void
     {
-        $this->delivery->status->fail()->dispatchAfterFailed()->now();
+        when(
+            ! $this->delivery->refresh()->status->isTerminal(),
+            fn () => $this->delivery->status->fail()->dispatchAfterFailed()->now()
+        );
     }
 }

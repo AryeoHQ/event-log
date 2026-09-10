@@ -14,6 +14,7 @@ use Support\Events\Log\DeliveryAttempts\Exceptions\Failed;
 use Support\Events\Log\DeliveryAttempts\Exceptions\Undeliverable;
 use Support\Events\Log\Transports\Dispatches\Exceptions\NotDefined;
 use Support\Events\Log\Transports\Dispatches\Sending\Provides\RecordsResult;
+use Support\Events\Log\Transports\Dispatches\Sending\Results\Result;
 use Tests\Fixtures\Support\Entities\Relayable\Relayable;
 use Tests\Fixtures\Support\Mqtt\Sending\Events\NeedsSent;
 use Tests\Fixtures\Tooling\EventLog\RelayableWithoutDispatches;
@@ -34,11 +35,12 @@ final class ProcessTest extends TestCase
     }
 
     #[Test]
-    public function it_stores_the_listener_result_as_the_response(): void
+    public function it_stores_the_listener_result(): void
     {
         Relayable::factory()->create()->announceToLog();
 
-        $this->assertSame('published', DeliveryAttempt::first()->response);
+        $this->assertInstanceOf(Result::class, DeliveryAttempt::first()->result);
+        $this->assertSame('published', DeliveryAttempt::first()->result->message);
     }
 
     #[Test]
@@ -64,7 +66,7 @@ final class ProcessTest extends TestCase
         Disqualify::assertFired();
 
         $attempt = $attempt->fresh();
-        $this->assertSame('recipient gone', $attempt->response);
+        $this->assertSame('recipient gone', $attempt->result->message);
         $this->assertNotNull($attempt->attempted_at);
     }
 
@@ -81,7 +83,7 @@ final class ProcessTest extends TestCase
         rescue(fn () => $attempt->status->lock()->now(), null, false);
 
         Fail::assertFired();
-        $this->assertSame('recipient returned 500', $attempt->fresh()->response);
+        $this->assertSame('recipient returned 500', $attempt->fresh()->result->message);
     }
 
     #[Test]
@@ -94,6 +96,39 @@ final class ProcessTest extends TestCase
         rescue(fn () => $delivery->attempts()->create(), null, false);
 
         Fail::assertFired();
-        $this->assertSame((new NotDefined(RelayableWithoutDispatches::class))->getMessage(), DeliveryAttempt::first()->response);
+        $this->assertSame((new NotDefined(RelayableWithoutDispatches::class))->getMessage(), DeliveryAttempt::first()->result->message);
+    }
+
+    #[Test]
+    public function it_keeps_the_recorded_result_when_the_listener_throws(): void
+    {
+        Fail::fake();
+
+        Event::forget(NeedsSent::class);
+        Event::listen(NeedsSent::class, function (NeedsSent $event) {
+            $event->record('failure');
+            throw new Failed('ignored');
+        });
+
+        $attempt = DeliveryAttempt::factory()->mqtt()->createQuietly();
+
+        rescue(fn () => $attempt->status->lock()->now(), null, false);
+
+        $this->assertSame('failure', $attempt->fresh()->result->message);
+    }
+
+    #[Test]
+    public function it_stores_the_exception_message_when_the_listener_throws_without_recording(): void
+    {
+        Fail::fake();
+
+        Event::forget(NeedsSent::class);
+        Event::listen(NeedsSent::class, fn () => throw new Failed('failure'));
+
+        $attempt = DeliveryAttempt::factory()->mqtt()->createQuietly();
+
+        rescue(fn () => $attempt->status->lock()->now(), null, false);
+
+        $this->assertSame('failure', $attempt->fresh()->result->message);
     }
 }
