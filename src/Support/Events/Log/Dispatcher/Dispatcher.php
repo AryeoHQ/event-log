@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Support\Events\Log\Dispatcher;
 
 use Support\Events\Log\Actions\LogEvent;
+use Support\Events\Log\Dispatcher\Exceptions\RecordingFailed;
+use Throwable;
 
 final class Dispatcher implements \Illuminate\Contracts\Events\Dispatcher
 {
@@ -39,6 +41,9 @@ final class Dispatcher implements \Illuminate\Contracts\Events\Dispatcher
 
     private function record(string|object $event): void
     {
-        rescue(fn () => LogEvent::make($event)->now(), report: true);
+        rescue(
+            fn () => LogEvent::make($event)->dispatchAfterFailed()->now(),
+            report: fn (Throwable $exception) => report(RecordingFailed::from($exception)),
+        );
     }
 }

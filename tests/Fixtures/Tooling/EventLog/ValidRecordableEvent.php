@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Tooling\EventLog;
 
+use Support\Events\Log;
 use Support\Events\Log\Alias\Alias;
-use Support\Events\Log\Contracts\Recordable;
-use Support\Events\Log\IdentifiesLoggable\IdentifiesLoggable;
-use Support\Events\Log\Provides\HasLoggable;
-use Tests\Fixtures\Support\Entities\Articles\Article;
+use Tests\Fixtures\Support\Entities\Recordable\Recordable;
 
 #[Alias('test.created')]
-final class ValidRecordableEvent implements Recordable
+final class ValidRecordableEvent implements Log\Contracts\Recordable
 {
-    use HasLoggable;
+    use Log\Provides\HasLoggable;
 
-    public function __construct(
-        #[IdentifiesLoggable]
-        public readonly Article $article,
-    ) {}
+    #[Log\IdentifiesLoggable\IdentifiesLoggable]
+    public Recordable $recordable;
+
+    public function __construct(Recordable $recordable)
+    {
+        $this->recordable = $recordable;
+    }
 }

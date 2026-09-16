@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Tooling\EventLog;
 
-use Support\Events\Log\Contracts\Recordable;
-use Support\Events\Log\Provides\HasLoggable;
-use Tests\Fixtures\Support\Entities\Articles\Article;
+use Support\Events\Log;
+use Tests\Fixtures\Support\Entities\Recordable\Recordable;
 
-final class HasLoggableWithoutIdentifiesLoggableAttribute implements Recordable
+final class HasLoggableWithoutIdentifiesLoggableAttribute implements Log\Contracts\Recordable
 {
-    use HasLoggable;
+    use Log\Provides\HasLoggable;
 
-    public readonly Article $article;
+    public readonly Recordable $recordable;
 
     public function __construct() {}
 }

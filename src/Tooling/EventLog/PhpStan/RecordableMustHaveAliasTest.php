@@ -41,7 +41,7 @@ final class RecordableMustHaveAliasTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('EventLog/RecordableWithoutAlias.php')], [
             [
                 class_basename(Recordable::class).' must have a #['.class_basename(Alias::class).'] attribute.',
-                12,
+                10,
             ],
         ]);
     }

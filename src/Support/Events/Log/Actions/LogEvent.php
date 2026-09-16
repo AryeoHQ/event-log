@@ -5,21 +5,19 @@ declare(strict_types=1);
 namespace Support\Events\Log\Actions;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Contracts\Broadcasting\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Log\Context\Repository;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Support\Actions\Attributes\DispatchAfterSyncFailed;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 use Support\Events\Log\Contracts\Recordable;
 use Support\Events\Log\Contracts\RecordableAfterCommit;
 use Support\Events\Log\Logs\Log;
 
-#[DispatchAfterSyncFailed]
 final class LogEvent implements Action, ShouldBeUnique
 {
     use AsAction;
@@ -30,7 +28,7 @@ final class LogEvent implements Action, ShouldBeUnique
     /** @var list<int> */
     public $backoff = [10, 60, 60 * 5];
 
-    public string $uniqueId {
+    public private(set) string $uniqueId {
         get => $this->uniqueId ??= Str::uuid7()->toString();
     }
 
@@ -53,6 +51,7 @@ final class LogEvent implements Action, ShouldBeUnique
 
     public function __construct(mixed $event)
     {
+        $this->queue = config('event_log.queues.'.Log::class);
         $this->original = $event;
         $this->occurredAt = $this->captureOccurredAt();
         $this->context = $this->captureContext();
