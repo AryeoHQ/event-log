@@ -38,6 +38,14 @@ services:
         tags:
             - phpstan.rules.rule
     -
+        class: Tooling\EventLog\PhpStan\Collectors\TransportAliases
+        tags:
+            - phpstan.collector
+    -
+        class: Tooling\EventLog\PhpStan\TransportMustHaveUniqueAlias
+        tags:
+            - phpstan.rules.rule
+    -
         class: Tooling\EventLog\PhpStan\NeedsEnvelopesMustUseCollectsEnvelopes
         tags:
             - phpstan.rules.rule

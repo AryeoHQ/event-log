@@ -12,6 +12,7 @@ use Support\Events\Log\DeliveryAttempts;
 use Support\Events\Log\Dispatcher\Dispatcher;
 use Support\Events\Log\Logs;
 use Support\Events\Log\Relays;
+use Tooling\EventLog\Composer\ClassMap\Collectors\Transports;
 
 class Provider extends ServiceProvider
 {
@@ -19,6 +20,7 @@ class Provider extends ServiceProvider
     {
         $this->registerConfig();
         $this->registerBindings();
+        $this->registerCollectors();
     }
 
     public function boot(): void
@@ -46,6 +48,11 @@ class Provider extends ServiceProvider
         }
 
         $this->app->extend('events', fn (\Illuminate\Events\Dispatcher $original) => new Dispatcher($original));
+    }
+
+    private function registerCollectors(): void
+    {
+        $this->app->tag([Transports::class], 'tooling.classmap.collectors');
     }
 
     private function bootMixins(): void

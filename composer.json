@@ -23,7 +23,8 @@
         "nesbot/carbon": "^3.11",
         "aryeo/tooling-laravel": "0.0.39",
         "phpstan/phpstan": "^2.1",
-        "nikic/php-parser": "^5.0"
+        "nikic/php-parser": "^5.0",
+        "calebporzio/sushi": "^2.5"
     },
     "require-dev": {
         "orchestra/testbench": "^10.6",
@@ -79,7 +80,8 @@
                         "src",
                         "tests/Fixtures/Support"
                     ]
-                }
+                },
+                "skip": "tooling/rector/skip.php"
             },
             "pint": {
                 "config": {
