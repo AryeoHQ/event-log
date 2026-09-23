@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Event;
 use Orchestra\Testbench\Attributes\WithConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Events\Database\Eloquent\Swappable\Swapper\Facades\Swapper;
 use Support\Events\Log\Envelopes\Envelope;
 use Support\Events\Log\Logs\Log;
 use Tests\Fixtures\Support\Entities\Recordable\Recordable;
@@ -20,6 +21,12 @@ use Tests\TestCase;
 #[CoversClass(Delivery::class)]
 final class DeliveryTest extends TestCase
 {
+    #[Test]
+    public function it_supports_swapping(): void
+    {
+        $this->assertTrue(Swapper::isSwappable(Delivery::class));
+    }
+
     #[Test]
     public function it_resolves_the_full_data_when_version_is_null(): void
     {
@@ -137,14 +144,14 @@ final class DeliveryTest extends TestCase
     }
 
     #[Test]
-    #[WithConfig('event_log.queues.'.Delivery::class, 'deliveries')]
+    #[WithConfig('event_log.queues.delivery', 'deliveries')]
     public function it_falls_back_to_the_layer_queue_when_the_transport_config_key_is_unset(): void
     {
         $this->assertSame('deliveries', Delivery::factory()->mqtt(Queued::class)->createQuietly()->queue);
     }
 
     #[Test]
-    #[WithConfig('event_log.queues.'.Delivery::class, 'deliveries')]
+    #[WithConfig('event_log.queues.delivery', 'deliveries')]
     public function it_falls_back_to_the_layer_queue_when_the_transport_has_no_queues(): void
     {
         $this->assertSame('deliveries', Delivery::factory()->mqtt()->createQuietly()->queue);

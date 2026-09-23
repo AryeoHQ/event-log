@@ -7,6 +7,7 @@ namespace Support\Events\Log\Relays;
 use Orchestra\Testbench\Attributes\WithConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Events\Database\Eloquent\Swappable\Swapper\Facades\Swapper;
 use Support\Events\Log\Deliveries\Delivery;
 use Support\Events\Log\Logs\Log;
 use Tests\Fixtures\Support\Entities\Relayable\Relayable;
@@ -17,6 +18,12 @@ use Tests\TestCase;
 #[CoversClass(Relay::class)]
 final class RelayTest extends TestCase
 {
+    #[Test]
+    public function it_supports_swapping(): void
+    {
+        $this->assertTrue(Swapper::isSwappable(Relay::class));
+    }
+
     #[Test]
     public function it_cascades_from_log_to_relay_to_delivery(): void
     {
@@ -44,14 +51,14 @@ final class RelayTest extends TestCase
     }
 
     #[Test]
-    #[WithConfig('event_log.queues.'.Relay::class, 'relays')]
+    #[WithConfig('event_log.queues.relay', 'relays')]
     public function it_falls_back_to_the_layer_queue_when_the_transport_config_key_is_unset(): void
     {
         $this->assertSame('relays', Relay::factory()->mqtt(Queued::class)->createQuietly()->queue);
     }
 
     #[Test]
-    #[WithConfig('event_log.queues.'.Relay::class, 'relays')]
+    #[WithConfig('event_log.queues.relay', 'relays')]
     public function it_falls_back_to_the_layer_queue_when_the_transport_has_no_queues(): void
     {
         $this->assertSame('relays', Relay::factory()->mqtt(Mqtt::class)->createQuietly()->queue);

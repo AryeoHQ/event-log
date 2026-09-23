@@ -51,7 +51,7 @@ final class LogEvent implements Action, ShouldBeUnique
 
     public function __construct(mixed $event)
     {
-        $this->queue = config('event_log.queues.'.Log::class);
+        $this->queue = config('event_log.queues.log');
         $this->original = $event;
         $this->occurredAt = $this->captureOccurredAt();
         $this->context = $this->captureContext();
@@ -132,7 +132,7 @@ final class LogEvent implements Action, ShouldBeUnique
 
     private function createLog(): void
     {
-        $this->original->log = $this->recordable->log = Log::createOrFirst(
+        $this->original->log = $this->recordable->log = Log::using()::createOrFirst(
             ['idempotency_key' => $this->uniqueId],
             [
                 'event' => $this->recordable,

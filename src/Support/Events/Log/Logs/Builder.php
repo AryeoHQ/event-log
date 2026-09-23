@@ -13,7 +13,7 @@ use Support\Events\Log\Logs\Status\Status;
  */
 class Builder extends EloquentBuilder
 {
-    public function stuck(): self
+    final public function stuck(): static
     {
         return $this->where(function (self $query): void {
             $query->whereIn('status', [Status::Pending, Status::Locked]) // @phpstan-ignore staticMethod.dynamicCall

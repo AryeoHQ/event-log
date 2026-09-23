@@ -32,6 +32,10 @@ Event dispatched
 | Delivery | `Deliveries\Delivery` | `event_log_deliveries` | Pending, Locked, Succeeded, Failed, Undeliverable |
 | DeliveryAttempt | `DeliveryAttempts\DeliveryAttempt` | `event_log_delivery_attempts` | Pending, Locked, Succeeded, Failed, Undeliverable |
 
+There is a fifth table, `event_log_transportables`. Nothing flows through it — it
+is a catalog of every event that can be relayed, rebuilt at deploy. See
+[the transportable catalog](#the-transportable-catalog).
+
 ## The tables
 
 ### `event_logs`
@@ -89,6 +93,96 @@ An attempt sets `$touches = ['delivery']`. So each new attempt updates the paren
 delivery's `updated_at`. This keeps the parent's timestamp fresh while the
 delivery retries. The watchdog depends on this (see [The watchdog](#the-watchdog)).
 
+### `event_log_transportables`
+
+| Column | Type | Meaning |
+|---|---|---|
+| `alias` | string PK | The `#[Alias]` string — the same value stored in `event_logs.type` |
+| `class` | string | The event class that implements a `Transport` |
+| `transports` | json | The `Transport` interfaces that class implements |
+| `created_at` / `updated_at` | timestampsTz | Row timestamps |
+
+The key is the alias, not a uuid. So your own table can point a foreign key at
+`alias` and store the same value you already had.
+
+## Swapping a model
+
+You can replace any model with your own subclass. Call `BaseLog::use(MyLog::class)`
+and the package uses yours everywhere — relationships, factories, queries, the
+watchdog, everything. The `Swapper` behind it is `#[Scoped]`, so it resets
+automatically per request.
+
+### Factory, builder, and collection
+
+Your subclass needs its own `#[UseFactory]`, `#[UseEloquentBuilder]`, and
+`#[CollectedBy]` attributes, each pointing at a class that extends ours. PHP
+doesn't inherit attributes, so without them your subclass falls back to the
+framework defaults — which means no `stuck()` on the builder, so the watchdog
+breaks. PHPStan catches a missing or wrong attribute (see
+[tooling.md](tooling.md#swapped-models)), and the `Swapper` also checks at
+runtime via `validateAttribute()`.
+
+### Property merging
+
+When your subclass redeclares `$casts`, `$dispatchesEvents`, or any other model
+property, the package merges it with ours instead of replacing it.
+All three types merge per key, but the winner differs. `$dispatchesEvents` lets
+the consumer win — so overriding `created` fires your event class instead of ours.
+`$casts` and `$attributes` let the package win — so the `status` cast and default
+can't be overridden by a subclass (that would break the state machine). Lists
+(`$fillable`, `$with`, `$withCount`, `$appends`, `$touches`) append and dedupe.
+
+This happens in `Swapper::consolidate()`, called from `initializeTraits()` (which
+is `final` so a subclass can't accidentally skip it). It runs last, after every
+trait initializer, so nothing gets lost.
+
+### Event class validation
+
+Your subclass can swap out an event class in `$dispatchesEvents`, but the
+replacement must extend ours. The package's listeners type-hint our event classes,
+so a completely foreign one would break them. `Swapper::validateEvents()` checks
+this after the merge and throws `Invalid` if it doesn't match. The event's model
+property is `final`, so a subclass can add fields but can't change the model type
+the listener reads.
+
+### Schema is locked
+
+`$table`, `$primaryKey`, `$keyType`, and `$incrementing` are `final`. The
+migrations name our tables and point foreign keys at our primary keys, so changing
+them would break things. `getTable()` and `getKeyName()` are `final` too, so you
+can't route around the properties through the getters.
+
+## The transportable catalog
+
+The catalog answers "which events can go out over which transport" from the
+database. Without it that question needs reflection over every class in the app,
+which a query cannot do and a foreign key cannot reference.
+
+`Transportables\Discovery` builds the answer. It reads the classmap collector (see
+[tooling.md](tooling.md#classmap-collector)) and, for each class it finds, reflects
+the alias and the transport interfaces. Both properties memoize, so repeated reads
+in one request cost nothing.
+
+`Transportables\Synchronize` writes it. Rows no longer discovered are deleted, and
+the rest are written with `updateOrCreate`. Both go through the model one row at a
+time rather than a mass `delete()` or `upsert()`, because the query builder skips
+model events and consumers listen to those.
+
+**It must run at deploy, after `composer install`.** The collector reads the
+classmap cache that composer's post-autoload-dump hook warms. Run it earlier and the
+catalog comes back empty.
+
+```
+php artisan event-log:transportables:synchronize
+```
+
+The command queues the work by default. Add `--sync` to run it inline, which is
+usually what a deploy script wants.
+
+`Database\Seeders\Sync` calls the same action with `->now()`. It exists so a
+local `migrate:fresh --seed` fills the catalog through the mechanism a developer
+already reaches for, rather than remembering a package-specific command.
+
 ## Recording an event
 
 ### The dispatcher decorator
@@ -145,7 +239,7 @@ action does this work:
 - For a `RecordableAfterCommit`, it writes the `Log` after the transaction
   commits. For a `Recordable`, it writes immediately with rollback protection
   (`DB::afterRollBack`).
-- It persists with `Log::createOrFirst(['idempotency_key' => $uniqueId], [...])`,
+- It persists with `Log::using()::createOrFirst(['idempotency_key' => $uniqueId], [...])`,
   which is idempotent on the unique key.
 
 ## Event integrity
@@ -173,12 +267,15 @@ The write step also force-fills three derived columns: `type` (from
 
 1. It base64-decodes. On failure it returns a `Logs\Integrity\Corrupted`.
 2. It splits the 64-character hex signature, recomputes the HMAC, and compares
-   with `hash_equals`. On a mismatch it returns a `Logs\Integrity\Tampered`.
+   with `hash_equals`. It tries `config('app.key')` and every
+   `config('app.previous_keys')` entry, so rotating a key does not mark old rows
+   `Tampered`. On a mismatch against all of them it returns a
+   `Logs\Integrity\Tampered`.
 3. Otherwise it unserializes back to the `Recordable`.
 
 The read step never throws. A consumer detects a bad row through the `Corrupted`
-or `Tampered` sentinel. Each sentinel is a `final readonly` object that holds the
-offending `string $raw`.
+or `Tampered` sentinel. Each is a `final` `RuntimeException` holding the offending
+`string $raw` — being throwable is what lets `Process` rethrow it later.
 
 ### The SerializesModels opt-out
 
@@ -219,9 +316,9 @@ one or more `Logs\Data\Variant` objects:
 - `Variant::make($payload, $version)` accepts an `Arrayable`, `JsonSerializable`,
   or `Jsonable` payload. It auto-discovers a `Version` from any public property of
   the payload. It falls back to the passed `$version`. It throws
-  `Version\Exceptions\NotProvided` if neither yields a version.
-- `Version` is `interface Version extends BackedEnum`. A consumer defines its own
-  backed enum.
+  `Logs\Data\Version\Exceptions\NotProvided` if neither yields a version.
+- `Logs\Data\Version\Contracts\Version` is `interface Version extends BackedEnum`.
+  A consumer defines its own backed enum.
 - `Data` is a `Castable` — the cast for the `data` column. On write it serializes
   to a JSON object keyed by each variant's `version->value`. On read it decodes
   back to a plain array. There is no flat single-variant form. A lone variant
@@ -296,7 +393,7 @@ how the pipeline routes to it.
 ## Per-layer queue resolution
 
 Each processing job runs on a queue owned by its layer, not chosen by the caller.
-Every model exposes a `$queue` property. Every trigger has a `$queue` property
+Every pipeline model exposes a `$queue` property. Every trigger has a `$queue` property
 hook that reads its target model's `$queue`. So the value is baked onto the job
 before dispatch. (There is no `viaQueue()` for a bus-dispatched command — the bus
 reads the plain `$queue` property.) The hook is a get-only hook that recomputes
@@ -310,34 +407,32 @@ and points the attribute at a key in it. The consumer customizes the queue throu
 that env. The transport author never hardcodes infrastructure. event-log resolves
 the key through `config()`.
 
-The layer's own fallback lives in `config('event_log.queues')`, keyed by model
-class (`Log::class`, `Relay::class`, `Delivery::class`). So each model's `$queue`
-reads `config('event_log.queues.'.static::class)` instead of a hardcoded string.
-The config is not published. The provider merges it in, and the `EVENT_LOG_QUEUE_*`
-env vars drive it. So the class-name keys stay internal to the package.
+The layer's own fallback lives in `config('event_log.queues')`, under `log`,
+`relay`, and `delivery`. The config is not published. The provider merges it in,
+and the `EVENT_LOG_QUEUE_*` env vars drive it.
 
 | Model | `$queue` resolves to |
 |---|---|
-| `Log` | `config('event_log.queues.'.Log::class)` |
-| `Relay` | `config(`#[Queues(collecting:)] key`)` ?? `config('event_log.queues.'.Relay::class)` |
-| `Delivery` | `config(`#[Queues(sending:)] key`)` ?? `config('event_log.queues.'.Delivery::class)` |
+| `Log` | `config('event_log.queues.log')` |
+| `Relay` | `config(`#[Queues(collecting:)] key`)` ?? `config('event_log.queues.relay')` |
+| `Delivery` | `config(`#[Queues(sending:)] key`)` ?? `config('event_log.queues.delivery')` |
 | `DeliveryAttempt` | `$this->delivery->queue` (defers to its Delivery) |
 
 `Queues::on($transport)` (a static on the `#[Queues]` attribute) is the one place
 that reflects the attribute off the transport. A missing attribute yields an empty
 `Queues`, so both slots read null. A null key — or a key that resolves to null (an
-unset env, or a typo) — falls through to the layer's own class-keyed entry, then
-the framework default. So a bad key degrades to the layer queue instead of an
-error. DeliveryAttempts process synchronously (`->now()`), so their own queue does
+unset env, or a typo) — falls through to the layer's own entry, then the framework
+default. So a bad key degrades to the layer queue instead of an error. DeliveryAttempts process synchronously (`->now()`), so their own queue does
 not matter in practice. But the model still exposes `$queue` (deferring to its
 Delivery), so a dispatched attempt trigger would route sensibly.
 
 `LogEvent` and the watchdog `Bite` objects use `AsAction` directly, not a base
 class. PHP forbids a class from redeclaring a trait property as a hooked one, so
 they cannot use the `$queue` hook. They assign
-`$this->queue = config('event_log.queues.'.Model::class)` in their constructor
-instead. This is the same resolved value (the layer config queue), set at
-construction rather than on read.
+`$this->queue = config('event_log.queues.<layer>')` in their constructor instead —
+the same layer queue, set at construction rather than on read. The
+DeliveryAttempt `Bite` is the exception: it reads `queues.delivery_attempt`, which
+the config does not define, so that sweep lands on the default queue.
 
 ## Concurrency: one worker per record
 
@@ -380,7 +475,7 @@ versus `->dispatch()`. `Bite::handle()` sweeps its tier's stuck records and fail
 each one.
 
 ```php
-Relay::query()
+Relay::using()::query()
     ->stuck()
     ->eachById(fn (Relay $relay) => rescue(fn () => $relay->status->fail()->now()));
 ```
@@ -399,11 +494,12 @@ The command resolves the tier's `Bite` and, by default, `->dispatch()`es it.
 See [lifecycle.md](lifecycle.md#the-watchdog) for the operational detail.
 
 Each `Bite` sets its `$queue` in the constructor to
-`config('event_log.queues.'.Model::class)` — the layer config queue, keyed by
-model class. (This is a constructor assignment, not a hook, because `Bite` uses
-`AsAction` directly.) A sweep spans the whole table, not one transport, so there
-is no `#[Queues]` slot to consult. It uses the layer config queue only. So a
-`->dispatch()`ed sweep runs on the same layer queue its processing jobs use.
+`config('event_log.queues.<layer>')` — the layer config queue. (This is a
+constructor assignment, not a hook, because `Bite` uses `AsAction` directly.) A
+sweep spans the whole table, not one transport, so there is no `#[Queues]` slot to
+consult. So a `->dispatch()`ed sweep for the Log, Relay, and Delivery tiers runs
+on the same layer queue its processing jobs use. The DeliveryAttempt sweep reads a
+key the config does not define and falls to the default queue.
 
 ## Performance and indexing
 
@@ -423,7 +519,9 @@ fast.
 | `event_logs` | `(occurred_at, id)` | the index page |
 | `event_logs` | `(type, occurred_at, id)` | the index page filtered to one event type |
 | `event_logs` | `(loggable_type, loggable_id, occurred_at, id)` | a model's own log, e.g. `$loggable->eventLogs()` |
-| `event_log_deliveries` | `(recipient_type, recipient_id, id)` | a recipient's deliveries, e.g. `$recipient->deliveries()` |
+| `event_log_deliveries` | `(recipient_type, recipient_id, status, id)` | a recipient's deliveries, e.g. `$recipient->deliveries()`, optionally filtered by status |
+| `event_log_deliveries` | `(event_log_relay_id, recipient_type, recipient_id, version)` | the envelope `firstOrCreate` identity; the leading column also covers plain FK lookups |
+| all four tiers | `(status, updated_at)` | the watchdog `stuck()` sweep |
 
 Each index leads with its filter columns, then its sort columns. So a filtered
 list is one seek, not a filter-then-sort. The child tables sort by `id` (a UUIDv7,
@@ -432,9 +530,10 @@ already time-ordered), so they need no timestamp column.
 Relationship walks (for example `relay->log`, the eager loads, and `find()`) use
 the primary and foreign keys. These are already fast on their own.
 
-The morph columns are declared by hand, not by `uuidMorphs`. So the only index is
-the wide composite. The default narrow `(type, id)` morph index would be a subset
-of it, which would add a write cost for no read benefit.
+The morph columns are declared by hand, not by `uuidMorphs`. So there is no narrow
+morph index — the composites above already cover those columns. The default narrow
+`(type, id)` morph index would be a subset of them, which would add a write cost
+for no read benefit.
 
 The `$loggable->eventLogs()` and `$recipient->deliveries()` reverse relationships
 are yours to declare. These indexes back them.
@@ -444,10 +543,6 @@ are yours to declare. These indexes back them.
 Every index taxes each insert. So the package adds only the ones with a real query
 behind them:
 
-- **`status`** — the watchdog filters on it (`stuck()` scans `Pending`/`Locked`
-  by `updated_at`). But that is a periodic background sweep, not a hot path, so it
-  does not justify the per-insert cost yet. Add a `(status, updated_at)` composite
-  if the sweep or a dashboard ever needs it.
 - **`relays.transport`** — discovery inspects code, not the database.
 
 UUIDv7 keys append to the end of each index instead of scattering. So writes stay

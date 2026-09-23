@@ -8,7 +8,7 @@ use Support\Events\Log\Relays\Relay;
 
 class Pending
 {
-    public readonly Relay $relay;
+    final public readonly Relay $relay;
 
     public function __construct(Relay $relay)
     {

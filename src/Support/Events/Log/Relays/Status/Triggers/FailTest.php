@@ -31,7 +31,7 @@ final class FailTest extends TestCase
     }
 
     #[Test]
-    #[WithConfig('event_log.queues.'.Relay::class, 'relays')]
+    #[WithConfig('event_log.queues.relay', 'relays')]
     public function it_carries_the_layer_queue(): void
     {
         $relay = Relay::factory()->mqtt()->locked()->createQuietly();

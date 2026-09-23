@@ -8,7 +8,7 @@ use Support\Events\Log\DeliveryAttempts\DeliveryAttempt;
 
 class Succeeding
 {
-    public readonly DeliveryAttempt $deliveryAttempt;
+    final public readonly DeliveryAttempt $deliveryAttempt;
 
     public function __construct(DeliveryAttempt $deliveryAttempt)
     {

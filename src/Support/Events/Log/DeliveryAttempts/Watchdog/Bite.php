@@ -14,12 +14,12 @@ final class Bite implements Action
 
     public function __construct()
     {
-        $this->queue = config('event_log.queues.'.DeliveryAttempt::class);
+        $this->queue = config('event_log.queues.delivery_attempt');
     }
 
     public function handle(): void
     {
-        DeliveryAttempt::query()
+        DeliveryAttempt::using()::query()
             ->stuck()
             ->eachById(
                 fn (DeliveryAttempt $attempt) => rescue(fn () => $attempt->status->fail()->now())

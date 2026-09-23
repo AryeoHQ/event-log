@@ -8,7 +8,7 @@ use Support\Events\Log\Logs\Log;
 
 class Compromising
 {
-    public readonly Log $log;
+    final public readonly Log $log;
 
     public function __construct(Log $log)
     {

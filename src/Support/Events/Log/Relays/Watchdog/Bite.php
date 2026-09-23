@@ -14,12 +14,12 @@ final class Bite implements Action
 
     public function __construct()
     {
-        $this->queue = config('event_log.queues.'.Relay::class);
+        $this->queue = config('event_log.queues.relay');
     }
 
     public function handle(): void
     {
-        Relay::query()
+        Relay::using()::query()
             ->stuck()
             ->eachById(
                 fn (Relay $relay) => rescue(fn () => $relay->status->fail()->now())

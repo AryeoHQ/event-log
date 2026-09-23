@@ -14,7 +14,7 @@ use Support\Events\Log\Envelopes\Envelope;
  */
 class Builder extends EloquentBuilder
 {
-    public function stuck(): self
+    final public function stuck(): static
     {
         return $this->where(function (self $query): void {
             $query->whereIn('status', [Status::Pending, Status::Locked]) // @phpstan-ignore staticMethod.dynamicCall
@@ -36,7 +36,7 @@ class Builder extends EloquentBuilder
      * @param  string  $boolean
      * @return $this
      */
-    public function where($column, $operator = null, $value = null, $boolean = 'and')
+    final public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
         // String form: where('envelope', $envelope) or where('envelope', '!=', $envelope).
         // The 2-arg shorthand carries the Envelope in $operator; explicit forms in $value.
@@ -76,7 +76,7 @@ class Builder extends EloquentBuilder
     {
         $negated = str_contains($boolean, 'not') !== $operatorNegates;
 
-        $identity = array_merge($extra, Delivery::identify($envelope));
+        $identity = array_merge($extra, Delivery::using()::identify($envelope));
 
         parent::where(
             fn (self $query) => $query->where($identity),

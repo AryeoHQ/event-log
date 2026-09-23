@@ -20,7 +20,7 @@ trait SerializesModels
      * @param  bool  $withRelations
      * @return mixed
      */
-    protected function getSerializedPropertyValue($value, $withRelations = true)
+    final protected function getSerializedPropertyValue($value, $withRelations = true)
     {
         if ($this->disableSerializesModels) {
             return $value;

@@ -16,7 +16,7 @@ use Tests\TestCase;
 final class WatchdogTest extends TestCase
 {
     #[Test]
-    #[WithConfig('event_log.queues.'.Relay::class, 'relays')]
+    #[WithConfig('event_log.queues.relay', 'relays')]
     public function it_bites_on_the_layer_queue(): void
     {
         $this->assertSame('relays', Relay::watchdog()->bite()->queue);

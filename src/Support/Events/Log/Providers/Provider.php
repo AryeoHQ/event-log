@@ -12,9 +12,10 @@ use Support\Events\Log\DeliveryAttempts;
 use Support\Events\Log\Dispatcher\Dispatcher;
 use Support\Events\Log\Logs;
 use Support\Events\Log\Relays;
+use Support\Events\Log\Transportables;
 use Tooling\EventLog\Composer\ClassMap\Collectors\Transports;
 
-class Provider extends ServiceProvider
+final class Provider extends ServiceProvider
 {
     public function register(): void
     {
@@ -67,15 +68,16 @@ class Provider extends ServiceProvider
             __DIR__.'/../Relays/Migrations',
             __DIR__.'/../Deliveries/Migrations',
             __DIR__.'/../DeliveryAttempts/Migrations',
+            __DIR__.'/../Transportables/Migrations',
         ]);
     }
 
     private function bootListeners(): void
     {
-        Event::listen(Logs\Events\Created::class, Logs\Listeners\InitiateLifecycle::class);
-        Event::listen(Relays\Events\Created::class, Relays\Listeners\InitiateLifecycle::class);
-        Event::listen(Deliveries\Events\Created::class, Deliveries\Listeners\InitiateLifecycle::class);
-        Event::listen(DeliveryAttempts\Events\Created::class, DeliveryAttempts\Listeners\InitiateLifecycle::class);
+        Event::listen(data_get(resolve(Logs\Log::using())->dispatchesEvents(), 'created'), Logs\Listeners\InitiateLifecycle::class);
+        Event::listen(data_get(resolve(Relays\Relay::using())->dispatchesEvents(), 'created'), Relays\Listeners\InitiateLifecycle::class);
+        Event::listen(data_get(resolve(Deliveries\Delivery::using())->dispatchesEvents(), 'created'), Deliveries\Listeners\InitiateLifecycle::class);
+        Event::listen(data_get(resolve(DeliveryAttempts\DeliveryAttempt::using())->dispatchesEvents(), 'created'), DeliveryAttempts\Listeners\InitiateLifecycle::class);
     }
 
     private function bootCommands(): void
@@ -85,6 +87,7 @@ class Provider extends ServiceProvider
             Relays\Watchdog\Console\Commands\Watchdog::class,
             Deliveries\Watchdog\Console\Commands\Watchdog::class,
             DeliveryAttempts\Watchdog\Console\Commands\Watchdog::class,
+            Transportables\Console\Commands\Synchronize::class,
         ]);
     }
 }

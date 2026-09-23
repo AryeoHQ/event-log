@@ -8,7 +8,7 @@ use Support\Events\Log\Deliveries\Delivery;
 
 class Failed
 {
-    public readonly Delivery $delivery;
+    final public readonly Delivery $delivery;
 
     public function __construct(Delivery $delivery)
     {

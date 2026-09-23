@@ -27,7 +27,7 @@ trait HasEvent
         get => $this->signingKeys ??= collect([$this->signingKey, ...$this->previousSigningKeys]);
     }
 
-    public function setEventAttribute(Recordable $event): void
+    final public function setEventAttribute(Recordable $event): void
     {
         $this->attributes['event'] = $this->prepareEvent($event);
 
@@ -38,7 +38,7 @@ trait HasEvent
         ]);
     }
 
-    public function prepareEvent(Recordable $event): string
+    final public function prepareEvent(Recordable $event): string
     {
         $cloned = tap(
             (clone $event),
@@ -50,7 +50,7 @@ trait HasEvent
         return $this->encode($this->sign($serialized));
     }
 
-    public function getEventAttribute(string $value): Recordable|Corrupted|Tampered
+    final public function getEventAttribute(string $value): Recordable|Corrupted|Tampered
     {
         $decoded = $this->decode($value);
 
