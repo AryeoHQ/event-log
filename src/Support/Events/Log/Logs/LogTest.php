@@ -13,6 +13,7 @@ use Orchestra\Testbench\Attributes\WithConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\Attributes\Test;
+use Support\Events\Database\Eloquent\Swappable\Swapper\Facades\Swapper;
 use Support\Events\Log\Concerns\HasEvent;
 use Support\Events\Log\Logs\Integrity\Corrupted;
 use Support\Events\Log\Logs\Integrity\Tampered;
@@ -29,6 +30,12 @@ use TypeError;
 #[CoversTrait(HasEvent::class)]
 final class LogTest extends TestCase
 {
+    #[Test]
+    public function it_supports_swapping(): void
+    {
+        $this->assertTrue(Swapper::isSwappable(Log::class));
+    }
+
     #[Test]
     public function it_sets_event_when_recordable_received(): void
     {
@@ -271,7 +278,7 @@ final class LogTest extends TestCase
     }
 
     #[Test]
-    #[WithConfig('event_log.queues.'.Log::class, 'logs')]
+    #[WithConfig('event_log.queues.log', 'logs')]
     public function it_resolves_the_configured_queue(): void
     {
         $this->assertSame('logs', Log::factory()->make()->queue);

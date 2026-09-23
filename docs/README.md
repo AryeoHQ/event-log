@@ -36,12 +36,21 @@ Log ──────────▶ Relay ──────────▶ De
 |---|---|
 | **Log** | What happened? (the signed record of the event) |
 | **Relay** | Where must it go? (one per transport that wants the event) |
-| **Delivery** | Who must receive it? (one per recipient, with the payload version they want) |
+| **Delivery** | Who must receive it? (one per envelope — a recipient plus the payload version they want) |
 | **DeliveryAttempt** | Did the send work? (one per try, with the result) |
 
 A `Log` makes a `Relay` for each transport. A `Relay` makes a `Delivery` for each
-recipient. A `Delivery` makes a `DeliveryAttempt` for each try. The send happens
-at the `DeliveryAttempt`.
+envelope. A `Delivery` makes a `DeliveryAttempt` for each try. The send happens at
+the `DeliveryAttempt`.
+
+There is a fifth model, `Transportable`, but it is not a tier. It is a catalog of
+the events that can be sent at all, so an application can list them or point a
+foreign key at one. No tier creates it — `Synchronize` fills it at deploy — and it
+has no status. See
+[architecture.md](architecture.md#the-transportable-catalog).
+
+All five can be swapped for a consumer subclass. See
+[architecture.md](architecture.md#swapping-a-model).
 
 ## How a tier moves
 
@@ -58,11 +67,12 @@ child's creation starts the same shape one tier down.
 
 Three mechanisms protect the pipeline. Each document explains one part.
 
-- **Idempotent creation.** A step that creates children uses `firstOrCreate`. If
-  the step runs twice, the second run finds the rows the first run made. It does
-  not make duplicates.
-- **One worker per record.** The process step holds a lock keyed to its record.
-  Two workers cannot process the same record at the same time. The loser stops.
+- **Idempotent creation.** The Log and Relay steps use `firstOrCreate`. If a step
+  runs twice, the second run finds the rows the first run made. It does not make
+  duplicates.
+- **One worker per record.** The Log, Relay, and Delivery process steps each hold
+  a lock keyed to their record. Two workers cannot process the same record at the
+  same time. The loser stops.
 - **The watchdog.** A scheduled sweep finds records that are stuck in `Pending` or
   `Locked` past a grace period. It moves them to `Failed`, so they become visible.
 
@@ -77,6 +87,9 @@ prevent that.
 | [architecture.md](architecture.md) | The models, tables, columns, indexes, and the recording path |
 | [lifecycle.md](lifecycle.md) | How the create → lock → process cascade runs, and the watchdog |
 | [state-machines.md](state-machines.md) | The status states, the transitions, and each trigger |
-| [tooling.md](tooling.md) | The PHPStan rules that hold the contracts in place |
+| [tooling.md](tooling.md) | The PHPStan rules that hold the contracts in place, and the classmap collector |
 
-The namespace root is `Support\Events\Log\`, under `src/Support/Events/Log/`.
+Most of the package lives under `Support\Events\Log\`, in
+`src/Support/Events/Log/`. The swappable-model traits and the `Swapper` sit under
+`Support\Events\Database\Eloquent\Swappable\`, and the dispatcher mixin under
+`Support\Events\Dispatcher\`.

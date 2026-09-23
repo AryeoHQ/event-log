@@ -9,4 +9,4 @@ use Illuminate\Database\Eloquent\Collection;
 /**
  * @extends \Illuminate\Database\Eloquent\Collection<array-key, \Support\Events\Log\Deliveries\Delivery>
  */
-final class Deliveries extends Collection {}
+class Deliveries extends Collection {}

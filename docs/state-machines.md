@@ -21,8 +21,9 @@ Each `Status` enum uses per-case attributes:
 
 The magic methods resolve through `ManagesState::__call`. It matches the method
 name against the camelCased basename of each transition's `using` class. It
-returns `$transition->using::make(...)->to($transition->to)->on($model)`. So a
-trigger always has its target model and destination state before you run it.
+returns `$transition->using::make(...)->to($transition->to)->from($this)->on($model)`.
+So a trigger always has its target model, destination state, and origin state
+before you run it — the origin is what `preventInvalidTransition` checks against.
 
 ## Transition tables
 
@@ -77,7 +78,8 @@ its `Process` goes straight `Locked → Succeeded`.
 `Trigger` (in `aryeo/eloquent-state-machines`) is abstract and uses `AsAction`. It
 defaults to `#[TransitionDuring(Phase::After)]`. Its `lifecycle()` wraps
 `before() → handle() → after()` in a `DB::transaction()` (unless the trigger has
-`#[WithoutTransaction]`). On a throw it rescues a `model->refresh()` and re-throws.
+`#[WithoutTransaction]`). On a throw it refreshes the model — only when the
+transaction wrapper is in play — and re-throws.
 `before()` guards `allowed()`, dispatches the before-event, and (for a
 `Phase::Before` trigger) performs the state write. `after()` writes the state and
 dispatches the after-event, unless the job failed or released.
@@ -102,8 +104,10 @@ protect a queued job as well as a synchronous one.
 - `dispatchAfterFailed()` — a fluent call chained at the call site, not an
   attribute. If the trigger throws while it runs synchronously, re-queue it once.
   This stops a record from being stranded mid-lifecycle.
-- `middleware()` — returns a `WithoutOverlapping` lock keyed to the record (only on
-  the three queued `Process` triggers). See
+- `middleware()` — returns a `WithoutOverlapping` lock keyed
+  `<destination Status enum>:<record id>` (only on the three queued `Process`
+  triggers), with `dontRelease()` and `expireAfter(config('event_log.locking.ttl'))`.
+  See
   [architecture.md](architecture.md#concurrency-one-worker-per-record).
 
 Every trigger also carries a `$queue` property hook that reads its target model's
@@ -118,7 +122,7 @@ it because it is the same on every trigger.
 | Trigger | `handle()` | `failed()` | Invoked | Attributes / props |
 |---|---|---|---|---|
 | `Lock` | `process()->dispatch()->afterCommit()` | `refresh()`, skip if `isTerminal()`, else `fail()->dispatchAfterFailed()->now()` | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]` |
-| `Process` | if event is a `Transport`, `firstOrCreate` a `Relay` per `event->transports` (keyed on `transport`) | Corrupted/Tampered → `compromise()`, else `fail()` (via `dispatchAfterFailed()`) | `->dispatch()` | `$tries=3`, `$backoff=[5,25]`; `middleware()` returns `WithoutOverlapping` per record |
+| `Process` | rethrow the stored event if it is a `Throwable` (`Corrupted`/`Tampered`); if event is a `Transport`, `firstOrCreate` a `Relay` per `event->transports` (keyed on `transport`) | Corrupted/Tampered → `compromise()`, else `fail()` (via `dispatchAfterFailed()`) | `->dispatch()` | `$tries=3`, `$backoff=[5,25]`; `middleware()` returns `WithoutOverlapping` per record |
 | `Compromise` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Fail` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Retry` | `lock()->now()` | none | manual | `#[TransitionDuring(Before)]` |
@@ -137,7 +141,7 @@ it because it is the same on every trigger.
 | Trigger | `handle()` | `failed()` | Invoked | Attributes / props |
 |---|---|---|---|---|
 | `Lock` | `process()->dispatch()->afterCommit()` | `refresh()`, skip if `isTerminal()`, else `fail()->dispatchAfterFailed()->now()` | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]` |
-| `Process` | `touch()`; if `!is_deliverable` → `disqualify()`; else `attempts()->create()` (catch `Undeliverable` → `disqualify()`); else `succeed()` (all via `dispatchAfterFailed()->now()`) | `Undeliverable` → disqualify, else fail (all via `dispatchAfterFailed()`) | `->dispatch()` | `#[WithoutTransaction]`; dynamic `tries` (= `delivery->tries - attempts_count`) and `backoff` (`5**n`); `middleware()` returns `WithoutOverlapping` per record |
+| `Process` | `touch()`; if `!is_deliverable` → `disqualify()`; else `attempts()->create()` (catch `Undeliverable` → `disqualify()`); else `succeed()` (all via `dispatchAfterFailed()->now()`) | `Undeliverable` → disqualify, else fail (all via `dispatchAfterFailed()`) | `->dispatch()` | `#[WithoutTransaction]`; dynamic `tries` (= `delivery->tries - attempts_count`) and `backoff` (`5**n` for `n` in `1..tries-1`, empty when `tries <= 1`); `middleware()` returns `WithoutOverlapping` per record |
 | `Succeed` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Fail` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Disqualify` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
@@ -148,7 +152,7 @@ it because it is the same on every trigger.
 | Trigger | `handle()` | `failed()` | Invoked | Attributes / props |
 |---|---|---|---|---|
 | `Lock` | `process()->now()` (no queue boundary) | `refresh()`, writes `result` (write-once cast blocks if already set), skip transition if `isTerminal()`, else `Undeliverable` → disqualify, else fail (via `dispatchAfterFailed()`) | `->now()` from InitiateLifecycle | `#[TransitionDuring(Before)]`, `#[WithoutTransaction]` |
-| `Process` | reflect `#[Dispatches]`, build the sending event; `event()` in a `try`/`finally` that writes `result` when recorded. The `Dispatches` constructor validates that the sending class implements `NeedsSent`. | writes `result` as fallback (only if null via `fresh()`), then `Undeliverable` → disqualify else fail (via `dispatchAfterFailed()`) | `->now()` | `#[WithoutTransaction]` |
+| `Process` | reflect `#[Dispatches]`, build the sending event; stamp `attempted_at`; `event()` in a `try`/`finally` that writes `result` when recorded. The `Dispatches` constructor validates that the sending class implements `NeedsSent`. | writes `result` as fallback (only if null via `fresh()`), then `Undeliverable` → disqualify else fail (via `dispatchAfterFailed()`) | `->now()` | `#[WithoutTransaction]` |
 | `Fail` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 | `Disqualify` | empty | none | `->now()` w/ `dispatchAfterFailed()` | `$tries=3`, `$backoff=[5,25]` |
 

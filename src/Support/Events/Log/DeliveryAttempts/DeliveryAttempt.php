@@ -8,9 +8,10 @@ use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Support\Events\Database\Eloquent\Swappable\Models\Concerns\SupportsSwapping;
+use Support\Events\Database\Eloquent\Swappable\Models\Contracts\Swappable;
 use Support\Events\Log\Deliveries\Delivery;
 use Support\Events\Log\DeliveryAttempts\Collection\DeliveryAttempts;
 use Support\Events\Log\DeliveryAttempts\Status\Status;
@@ -29,14 +30,33 @@ use Support\Events\Log\Transports\Dispatches\Sending\Results\Result;
 #[CollectedBy(DeliveryAttempts::class)]
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
-class DeliveryAttempt extends Model
+class DeliveryAttempt extends Model implements Swappable
 {
-    /** @use HasFactory<Factory> */
-    use HasFactory;
+    use HasUuids {
+        getKeyType as private uuidKeyType;
+        getIncrementing as private uuidIncrementing;
+    }
 
-    use HasUuids;
+    /** @use SupportsSwapping<Factory, Builder> */
+    use SupportsSwapping;
 
-    protected $table = 'event_log_delivery_attempts';
+    final public $incrementing = false;
+
+    final protected $table = 'event_log_delivery_attempts';
+
+    final protected $primaryKey = 'id';
+
+    final protected $keyType = 'string';
+
+    final public function getKeyType(): string
+    {
+        return $this->uuidKeyType();
+    }
+
+    final public function getIncrementing(): bool
+    {
+        return $this->uuidIncrementing();
+    }
 
     protected $with = ['delivery'];
 
@@ -81,12 +101,12 @@ class DeliveryAttempt extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Support\Events\Log\Deliveries\Delivery, $this>
      */
-    public function delivery(): BelongsTo
+    final public function delivery(): BelongsTo
     {
-        return $this->belongsTo(Delivery::class, 'event_log_delivery_id');
+        return $this->belongsTo(Delivery::using(), 'event_log_delivery_id');
     }
 
-    public static function watchdog(): Watchdog\Watchdog
+    final public static function watchdog(): Watchdog\Watchdog
     {
         return resolve(Watchdog\Watchdog::class);
     }

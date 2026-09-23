@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Support\Events\Database\Eloquent\Swappable\Models\Concerns\SupportsSwapping;
+use Support\Events\Database\Eloquent\Swappable\Models\Contracts\Swappable;
 use Support\Events\Log\Deliveries\Delivery;
 use Support\Events\Log\Logs\Log;
 use Support\Events\Log\Relays\Collection\Relays;
@@ -29,14 +30,33 @@ use Support\Events\Log\Transports\Dispatches\Queues;
 #[CollectedBy(Relays::class)]
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
-class Relay extends Model
+class Relay extends Model implements Swappable
 {
-    /** @use HasFactory<Factory> */
-    use HasFactory;
+    use HasUuids {
+        getKeyType as private uuidKeyType;
+        getIncrementing as private uuidIncrementing;
+    }
 
-    use HasUuids;
+    /** @use SupportsSwapping<Factory, Builder> */
+    use SupportsSwapping;
 
-    protected $table = 'event_log_relays';
+    final public $incrementing = false;
+
+    final protected $table = 'event_log_relays';
+
+    final protected $primaryKey = 'id';
+
+    final protected $keyType = 'string';
+
+    final public function getKeyType(): string
+    {
+        return $this->uuidKeyType();
+    }
+
+    final public function getIncrementing(): bool
+    {
+        return $this->uuidIncrementing();
+    }
 
     /**
      * @var array<string, class-string>
@@ -70,7 +90,7 @@ class Relay extends Model
     public null|string $queue {
         get {
             $key = Queues::on($this->transport)->collecting;
-            $fallback = config('event_log.queues.'.static::class);
+            $fallback = config('event_log.queues.relay');
 
             return match ($key) {
                 null => $fallback,
@@ -82,20 +102,20 @@ class Relay extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Support\Events\Log\Logs\Log, $this>
      */
-    public function log(): BelongsTo
+    final public function log(): BelongsTo
     {
-        return $this->belongsTo(Log::class, 'event_log_id');
+        return $this->belongsTo(Log::using(), 'event_log_id');
     }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Support\Events\Log\Deliveries\Delivery, $this>
      */
-    public function deliveries(): HasMany
+    final public function deliveries(): HasMany
     {
-        return $this->hasMany(Delivery::class, 'event_log_relay_id')->chaperone();
+        return $this->hasMany(Delivery::using(), 'event_log_relay_id')->chaperone();
     }
 
-    public static function watchdog(): Watchdog\Watchdog
+    final public static function watchdog(): Watchdog\Watchdog
     {
         return resolve(Watchdog\Watchdog::class);
     }

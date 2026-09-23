@@ -2,10 +2,6 @@
 
 declare(strict_types=1);
 
-use Support\Events\Log\Deliveries\Delivery;
-use Support\Events\Log\Logs\Log;
-use Support\Events\Log\Relays\Relay;
-
 return [
     'enabled' => env('EVENT_LOG_ENABLED', true),
 
@@ -24,14 +20,14 @@ return [
 
     'queues' => [
         /*
-         * The queue each pipeline layer's processing job is dispatched onto,
-         * keyed by model. null uses the default queue. A transport may override
-         * the relay (collecting) and delivery (sending) layers via the #[Queues]
+         * The queue each pipeline layer's processing job is dispatched onto.
+         * null uses the default queue. A transport may override the relay
+         * (collecting) and delivery (sending) layers via the #[Queues]
          * attribute.
          */
-        Log::class => env('EVENT_LOG_QUEUE_LOG'),
-        Relay::class => env('EVENT_LOG_QUEUE_RELAY'),
-        Delivery::class => env('EVENT_LOG_QUEUE_DELIVERY'),
+        'log' => env('EVENT_LOG_QUEUE_LOG'),
+        'relay' => env('EVENT_LOG_QUEUE_RELAY'),
+        'delivery' => env('EVENT_LOG_QUEUE_DELIVERY'),
     ],
 
     'watchdog' => [

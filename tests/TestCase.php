@@ -54,6 +54,12 @@ abstract class TestCase extends Testbench\TestCase
             $table->timestamps();
         });
 
+        Schema::create('swappables', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+
         Schema::create('jobs', function (Blueprint $table): void {
             $table->id();
             $table->string('queue')->index();

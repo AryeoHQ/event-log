@@ -6,9 +6,9 @@ namespace Support\Events\Log\Logs\Events;
 
 use Support\Events\Log\Logs\Log;
 
-final class Created
+class Created
 {
-    public readonly Log $log;
+    final public readonly Log $log;
 
     public function __construct(Log $log)
     {

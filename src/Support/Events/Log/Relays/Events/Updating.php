@@ -6,9 +6,9 @@ namespace Support\Events\Log\Relays\Events;
 
 use Support\Events\Log\Relays\Relay;
 
-final class Updating
+class Updating
 {
-    public readonly Relay $relay;
+    final public readonly Relay $relay;
 
     public function __construct(Relay $relay)
     {

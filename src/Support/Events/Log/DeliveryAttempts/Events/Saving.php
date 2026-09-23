@@ -6,9 +6,9 @@ namespace Support\Events\Log\DeliveryAttempts\Events;
 
 use Support\Events\Log\DeliveryAttempts\DeliveryAttempt;
 
-final class Saving
+class Saving
 {
-    public readonly DeliveryAttempt $deliveryAttempt;
+    final public readonly DeliveryAttempt $deliveryAttempt;
 
     public function __construct(DeliveryAttempt $deliveryAttempt)
     {

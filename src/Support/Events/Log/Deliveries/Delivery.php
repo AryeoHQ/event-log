@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Support\Events\Database\Eloquent\Swappable\Models\Concerns\SupportsSwapping;
+use Support\Events\Database\Eloquent\Swappable\Models\Contracts\Swappable;
 use Support\Events\Log\Deliveries\Collection\Deliveries;
 use Support\Events\Log\Deliveries\Status\Status;
 use Support\Events\Log\DeliveryAttempts\DeliveryAttempt;
@@ -37,14 +38,33 @@ use Support\Events\Log\Transports\Dispatches\Queues;
 #[CollectedBy(Deliveries::class)]
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
-class Delivery extends Model
+class Delivery extends Model implements Swappable
 {
-    /** @use HasFactory<Factory> */
-    use HasFactory;
+    use HasUuids {
+        getKeyType as private uuidKeyType;
+        getIncrementing as private uuidIncrementing;
+    }
 
-    use HasUuids;
+    /** @use SupportsSwapping<Factory, Builder> */
+    use SupportsSwapping;
 
-    protected $table = 'event_log_deliveries';
+    final public $incrementing = false;
+
+    final protected $table = 'event_log_deliveries';
+
+    final protected $primaryKey = 'id';
+
+    final protected $keyType = 'string';
+
+    final public function getKeyType(): string
+    {
+        return $this->uuidKeyType();
+    }
+
+    final public function getIncrementing(): bool
+    {
+        return $this->uuidIncrementing();
+    }
 
     protected $with = ['relay.log', 'recipient'];
 
@@ -85,7 +105,7 @@ class Delivery extends Model
     public null|string $queue {
         get {
             $key = Queues::on($this->relay->transport)->sending;
-            $fallback = config('event_log.queues.'.static::class);
+            $fallback = config('event_log.queues.delivery');
 
             return match ($key) {
                 null => $fallback,
@@ -97,15 +117,15 @@ class Delivery extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Support\Events\Log\Relays\Relay, $this>
      */
-    public function relay(): BelongsTo
+    final public function relay(): BelongsTo
     {
-        return $this->belongsTo(Relay::class, 'event_log_relay_id');
+        return $this->belongsTo(Relay::using(), 'event_log_relay_id');
     }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\MorphTo<\Illuminate\Database\Eloquent\Model, $this>
      */
-    public function recipient(): MorphTo
+    final public function recipient(): MorphTo
     {
         return $this->morphTo();
     }
@@ -113,9 +133,9 @@ class Delivery extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Support\Events\Log\DeliveryAttempts\DeliveryAttempt, $this>
      */
-    public function attempts(): HasMany
+    final public function attempts(): HasMany
     {
-        return $this->hasMany(DeliveryAttempt::class, 'event_log_delivery_id')->chaperone();
+        return $this->hasMany(DeliveryAttempt::using(), 'event_log_delivery_id')->chaperone();
     }
 
     /**
@@ -123,7 +143,7 @@ class Delivery extends Model
      *
      * @return array<string, mixed>
      */
-    public static function identify(Envelope $envelope): array
+    final public static function identify(Envelope $envelope): array
     {
         return [
             'recipient_type' => $envelope->recipient->getMorphClass(),
@@ -132,13 +152,13 @@ class Delivery extends Model
         ];
     }
 
-    public function setRecipientAttribute(Model $model): void
+    final public function setRecipientAttribute(Model $model): void
     {
         $this->attributes['recipient_id'] = $model->getKey();
         $this->attributes['recipient_type'] = $model->getMorphClass();
     }
 
-    public function setEnvelopeAttribute(Envelope $envelope): void
+    final public function setEnvelopeAttribute(Envelope $envelope): void
     {
         $this->forceFill([
             'recipient' => $envelope->recipient,
@@ -146,7 +166,7 @@ class Delivery extends Model
         ]);
     }
 
-    public function setTriesAttribute(null|int $tries): void
+    final public function setTriesAttribute(null|int $tries): void
     {
         $this->attributes['tries'] = $tries ?? $this->attributes['tries'];
     }
@@ -154,7 +174,7 @@ class Delivery extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Casts\Attribute<array<string, mixed>|null, never>
      */
-    protected function payload(): Attribute
+    final protected function payload(): Attribute
     {
         return Attribute::get(function (): array|null { // @phpstan-ignore return.type
             if ($this->version === null) {
@@ -170,7 +190,7 @@ class Delivery extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Casts\Attribute<bool, never>
      */
-    protected function isDeliverable(): Attribute
+    final protected function isDeliverable(): Attribute
     {
         return Attribute::get(
             fn (): bool => $this->recipient !== null
@@ -178,7 +198,7 @@ class Delivery extends Model
         );
     }
 
-    public static function watchdog(): Watchdog\Watchdog
+    final public static function watchdog(): Watchdog\Watchdog
     {
         return resolve(Watchdog\Watchdog::class);
     }

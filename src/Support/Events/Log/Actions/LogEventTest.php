@@ -224,7 +224,7 @@ final class LogEventTest extends TestCase
     }
 
     #[Test]
-    #[WithConfig('event_log.queues.'.Log::class, 'logs')]
+    #[WithConfig('event_log.queues.log', 'logs')]
     public function it_runs_on_the_log_layer_queue(): void
     {
         $this->assertSame('logs', LogEvent::make(new Updated(Recordable::factory()->make()))->queue);

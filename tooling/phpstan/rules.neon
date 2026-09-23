@@ -1,10 +1,6 @@
 parameters:
     ignoreErrors:
         -
-            identifier: trait.unused
-            paths:
-                - ../../src/Support/Events/Log/Concerns/SerializesModels.php
-        -
             identifier: match.alwaysFalse
             paths:
                 - ../../src/Support/Events/Log/Concerns/SerializesModels.php
@@ -39,6 +35,10 @@ services:
             - phpstan.rules.rule
     -
         class: Tooling\EventLog\PhpStan\Collectors\TransportAliases
+        tags:
+            - phpstan.collector
+    -
+        class: Tooling\EventLog\PhpStan\Collectors\SwappableSubclasses
         tags:
             - phpstan.collector
     -
@@ -87,5 +87,29 @@ services:
             - phpstan.rules.rule
     -
         class: Tooling\EventLog\PhpStan\IdentifiesLoggableMustBeLoggableModel
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\SwappableSubclassMustDeclareUseFactory
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\SwappableSubclassFactoryMustExtendFactory
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\SwappableSubclassMustDeclareUseEloquentBuilder
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\SwappableSubclassBuilderMustExtendBuilder
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\SwappableSubclassMustDeclareCollectedBy
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\EventLog\PhpStan\SwappableSubclassCollectionMustExtendCollection
         tags:
             - phpstan.rules.rule

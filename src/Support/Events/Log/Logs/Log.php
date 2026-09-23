@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Support\Events\Database\Eloquent\Swappable\Models\Concerns\SupportsSwapping;
+use Support\Events\Database\Eloquent\Swappable\Models\Contracts\Swappable;
 use Support\Events\Log\Concerns\HasEvent;
 use Support\Events\Log\Context\Whitelisted;
 use Support\Events\Log\Contracts\Loggable;
@@ -36,16 +37,34 @@ use Support\Events\Log\Relays\Relay;
 #[CollectedBy(Logs::class)]
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
-class Log extends Model
+class Log extends Model implements Swappable
 {
     use HasEvent;
+    use HasUuids {
+        getKeyType as private uuidKeyType;
+        getIncrementing as private uuidIncrementing;
+    }
 
-    /** @use HasFactory<Factory> */
-    use HasFactory;
+    /** @use SupportsSwapping<Factory, Builder> */
+    use SupportsSwapping;
 
-    use HasUuids;
+    final public $incrementing = false;
 
-    protected $table = 'event_logs';
+    final protected $table = 'event_logs';
+
+    final protected $primaryKey = 'id';
+
+    final protected $keyType = 'string';
+
+    final public function getKeyType(): string
+    {
+        return $this->uuidKeyType();
+    }
+
+    final public function getIncrementing(): bool
+    {
+        return $this->uuidIncrementing();
+    }
 
     /**
      * @var array<string, class-string>
@@ -82,32 +101,32 @@ class Log extends Model
     ];
 
     public null|string $queue {
-        get => config('event_log.queues.'.static::class);
+        get => config('event_log.queues.log');
     }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Support\Events\Log\Relays\Relay, $this>
      */
-    public function relays(): HasMany
+    final public function relays(): HasMany
     {
-        return $this->hasMany(Relay::class, 'event_log_id')->chaperone();
+        return $this->hasMany(Relay::using(), 'event_log_id')->chaperone();
     }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\MorphTo<\Illuminate\Database\Eloquent\Model, $this>
      */
-    public function loggable(): MorphTo
+    final public function loggable(): MorphTo
     {
         return $this->morphTo();
     }
 
-    public function setLoggableAttribute(Model&Loggable $model): void
+    final public function setLoggableAttribute(Model&Loggable $model): void
     {
         $this->attributes['loggable_id'] = $model->getKey();
         $this->attributes['loggable_type'] = $model->getMorphClass();
     }
 
-    public static function watchdog(): Watchdog\Watchdog
+    final public static function watchdog(): Watchdog\Watchdog
     {
         return resolve(Watchdog\Watchdog::class);
     }

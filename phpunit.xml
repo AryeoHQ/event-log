@@ -14,12 +14,16 @@
     </include>
     <exclude>
       <directory suffix="Test.php">./src</directory>
-      <directory suffix="TestCases.php">./src</directory>
-      <directory suffix="Factory.php">./src</directory>
+      <file>./src/Support/Events/Log/Logs/Factory.php</file>
+      <file>./src/Support/Events/Log/Relays/Factory.php</file>
+      <file>./src/Support/Events/Log/Deliveries/Factory.php</file>
+      <file>./src/Support/Events/Log/DeliveryAttempts/Factory.php</file>
+      <file>./src/Support/Events/Log/Transportables/Factory.php</file>
       <directory>./src/Support/Events/Log/Logs/Migrations</directory>
       <directory>./src/Support/Events/Log/Relays/Migrations</directory>
       <directory>./src/Support/Events/Log/Deliveries/Migrations</directory>
       <directory>./src/Support/Events/Log/DeliveryAttempts/Migrations</directory>
+      <directory>./src/Support/Events/Log/Transportables/Migrations</directory>
     </exclude>
   </source>
   <php>

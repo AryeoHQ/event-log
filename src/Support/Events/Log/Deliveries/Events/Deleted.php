@@ -6,9 +6,9 @@ namespace Support\Events\Log\Deliveries\Events;
 
 use Support\Events\Log\Deliveries\Delivery;
 
-final class Deleted
+class Deleted
 {
-    public readonly Delivery $delivery;
+    final public readonly Delivery $delivery;
 
     public function __construct(Delivery $delivery)
     {

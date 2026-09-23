@@ -13,7 +13,7 @@ composer require aryeo/event-log
 The service provider auto-registers. Recording is enabled by default; set
 `EVENT_LOG_ENABLED=false` to turn it off entirely.
 
-Integrity signing requires your application's `APP_KEY`. Recording an event without one throws `MissingAppKeyException`, so make sure a key is set.
+Integrity signing requires your application's `APP_KEY`. Recording an event without one throws Laravel's `MissingAppKeyException`, so make sure a key is set.
 
 ## Overview
 
@@ -273,6 +273,7 @@ interface Webhookable extends Transport {}
 Optional attributes:
 
 - `#[Tries(int)]` — how many attempts each delivery gets (seeds `Delivery.tries`).
+  Deprecated: it will be replaced by Laravel 13's own `#[Tries]`.
 - `#[Queues(collecting: '...', sending: '...')]` — **config keys** (not queue
   names) for routing the relay and delivery processing jobs. Ship a config file
   with an env-backed default and point the attribute at it, e.g.
@@ -369,8 +370,8 @@ The sending listener has three possible outcomes:
 - **Success** — record a result with `$event->record(...)`. The value is stored
   on the delivery attempt's `result` column as a `Result` object.
 - **Retryable failure** — throw `Failed` (or let any exception bubble up). The
-  delivery moves to `Failed` and is retried up to the transport's `#[Tries]`
-  budget.
+  job retries up to the transport's `#[Tries]` budget, backing off between
+  attempts. Once the budget is spent the delivery moves to `Failed`.
 - **Permanent failure** — throw `Undeliverable`. The delivery moves to the
   terminal `Undeliverable` state and is **not** retried.
 
@@ -481,8 +482,9 @@ Envelope::make(recipient: $subscription);
 Envelope::make(recipient: $subscription, version: PayloadVersion::V1);
 ```
 
-When a version is given, the matching slice of the log's `data` is materialized
-into the delivery's `payload`. When omitted, the full `data` snapshot is used.
+When a version is given, the matching slice of the log's `data` is what
+`$delivery->payload` resolves to — it is read through the relation, not stored on
+the delivery. When omitted, the full `data` snapshot is used.
 
 An envelope is also how you identify a delivery, not just create one. A delivery's
 identity is its recipient plus version, and you query by that identity with the
@@ -512,6 +514,49 @@ A delivery whose recipient has been deleted, or whose requested version was neve
 emitted, is automatically marked `Undeliverable` — the sending listener is never
 invoked for it.
 
+### Catalog of transportable events
+
+The package keeps a table of every event that implements a transport, keyed by its
+`#[Alias]`. It exists so you can answer questions like "what can someone subscribe to?" with a query instead of reflection, and so your own tables can point a foreign key at an
+alias.
+
+To keep the table in sync, run this at deploy, **after `composer install`**:
+
+```
+php artisan event-log:transportables:synchronize --sync
+```
+
+The command queues by default, so pass `--sync` to run it right away.
+
+A seeder does the same work, if that fits your deploy or local setup better:
+
+```php
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Support\Events\Log\Transportables\Database\Seeders\Sync;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $this->call(Sync::class);
+    }
+}
+```
+
+Either way it is safe to re-run.
+
+Then query it like any other model:
+
+```php
+use Support\Events\Log\Transportables\Transportable;
+
+Transportable::pluck('alias');                                  // everything subscribable
+Transportable::find('order.placed')->class;                     // the event class
+Transportable::whereJsonContains('transports', Webhookable::class); // everything a webhook can carry
+```
+
 ---
 
 ## Configuration
@@ -524,6 +569,8 @@ invoked for it.
 | `EVENT_LOG_QUEUE_RELAY` | _(default queue)_ | Queue the Relay processing job runs on. A transport's `#[Queues(collecting:)]` overrides this. |
 | `EVENT_LOG_QUEUE_DELIVERY` | _(default queue)_ | Queue the Delivery processing job runs on. A transport's `#[Queues(sending:)]` overrides this. |
 | `EVENT_LOG_WATCHDOG_GRACE` | `15` | Minutes a record may sit in `Pending`/`Locked` before the watchdog fails it. |
+| `EVENT_LOG_LOCKING_TTL` | `300` | Seconds a record's transition lock is held before it expires. Set it longer than the slowest processing step. |
+| `EVENT_LOG_DELIVERY_ATTEMPT_RESULT_MESSAGE_LENGTH` | `1000` | Characters of a delivery attempt's result message to keep. |
 
 ### Context
 
@@ -567,15 +614,119 @@ the normal transition, so they become durable, observable `Failed` records inste
 of silent orphans:
 
 ```
-php artisan event-log:watchdog:logs
-php artisan event-log:watchdog:relays
-php artisan event-log:watchdog:deliveries
-php artisan event-log:watchdog:delivery-attempts
+php artisan event-log:logs:watchdog
+php artisan event-log:relays:watchdog
+php artisan event-log:deliveries:watchdog
+php artisan event-log:delivery-attempts:watchdog
 ```
 
 Each queues the sweep by default (add `--sync` to run inline). Schedule them to
 match each tier's grace period; the sweep is idempotent. See
 [docs/lifecycle.md](docs/lifecycle.md#the-watchdog) for details.
+
+---
+
+## Customize
+
+### Extend a model
+
+Every model — `Log`, `Relay`, `Delivery`, `DeliveryAttempt`, and `Transportable` —
+can be swapped for your own subclass. Register it in `register()`, so it is in
+place before any provider's `boot()` can touch a model:
+
+```php
+namespace App\Providers;
+
+use App\Models\Log;
+use Illuminate\Support\ServiceProvider;
+use Support\Events\Log\Logs\Log as BaseLog;
+
+final class EventLogServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        BaseLog::use(Log::class);
+    }
+}
+```
+
+The package resolves every model through `::using()`, so your subclass gets the
+writes, the relationships, and the factory.
+
+Your subclass has to bring its own factory, builder, and collection, and each has
+to extend the package's:
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Attributes\CollectedBy;
+use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Support\Events\Log\Logs;
+
+#[CollectedBy(LogCollection::class)]
+#[UseEloquentBuilder(LogBuilder::class)]
+#[UseFactory(LogFactory::class)]
+final class Log extends Logs\Log {}
+
+final class LogCollection extends Logs\Collection\Logs {}
+
+final class LogBuilder extends Logs\Builder {}
+
+final class LogFactory extends Logs\Factory {}
+```
+
+All three are required because PHP does not inherit attributes. Leave one off and
+the subclass falls back to the framework default — which, on the four pipeline
+models, means losing the `stuck()` method the watchdog runs on. PHPStan fails the
+build if an attribute is missing, or if it names a class that is not ours.
+
+### Redeclare what you need
+
+The properties a model declares merge across the inheritance chain, so you name
+only what you are changing and keep everything else we declared — `$casts`,
+`$attributes`, `$dispatchesEvents`, `$fillable`, `$with`, `$withCount`,
+`$appends`, and `$touches`:
+
+```php
+final class Log extends BaseLog
+{
+    protected $dispatchesEvents = ['created' => App\Events\LogCreated::class];
+
+    protected $casts = ['reviewed_at' => 'immutable_datetime'];
+}
+```
+
+Keyed maps merge per key, so naming `created` leaves the other nine hooks alone.
+Lists append. For `$dispatchesEvents`, your value wins on a conflicting key — so
+replacing `created` fires your event class. For `$casts` and `$attributes`, the
+package wins — the `status` cast and default can't be overridden. Your event class
+must extend the package's — the package listeners type-hint ours, so a foreign
+class breaks them. This is validated at boot.
+
+`$table`, `$primaryKey`, `$keyType`, and `$incrementing` are `final` on every
+model. You are swapping the class, not the schema, and our migrations name our
+tables and keys in their foreign keys — so PHP rejects a subclass that redeclares
+one.
+
+### Listen to model changes
+
+Each model ships its own event classes for the standard Eloquent hooks —
+`Retrieved`, `Creating`, `Created`, `Updating`, `Updated`, `Saving`, `Saved`,
+`Replicating`, `Deleting`, `Deleted`:
+
+```php
+use Support\Events\Log\Transportables\Events\Deleting;
+
+Event::listen(Deleting::class, CancelSubscriptions::class);
+```
+
+The event classes live under each model's `Events\` namespace and expose the
+model under its own name — `$event->log`, `$event->relay`, `$event->delivery`,
+`$event->deliveryAttempt`, `$event->transportable`.
+
+Return `void` from the listener. A non-null return cancels the operation on a
+halting hook like `deleting`.
 
 ---
 
@@ -592,4 +743,5 @@ Design and maintenance documentation lives in [docs/](docs/):
 - [docs/state-machines.md](docs/state-machines.md) — every tier's state machine,
   transition tables, triggers, and the rendered lifecycle diagrams.
 - [docs/tooling.md](docs/tooling.md) — the custom PHPStan rules that enforce the
-  package's contracts at static-analysis time.
+  package's contracts at static-analysis time, and the classmap collector behind
+  the transportable catalog.

@@ -42,6 +42,9 @@ lifecycle begins.
 `Providers\Provider::bootListeners()` wires these. The `Created` events are the
 standard Eloquent model events declared in each model's `$dispatchesEvents`.
 
+`Transportable` declares the same kind of map but has no listener here. It is a
+catalog, not a tier, so nothing initiates it. Its events exist for consumers.
+
 The DeliveryAttempts listener is the one that is not wrapped in `rescue()`. This is
 the only asymmetry in the set.
 
@@ -83,21 +86,21 @@ The `Lock` triggers just dispatch. They do not pick the queue. Every trigger has
 to the layer, not the caller. Because the hook is on every trigger (not only
 `Process`), the routing stays correct no matter which trigger is dispatched.
 
-Each layer resolves its queue like this. The layer fallback is keyed by model
-class.
+Each layer resolves its queue like this.
 
 | Layer | Resolves to |
 |---|---|
-| Log | `config('event_log.queues.'.Log::class)` |
-| Relay | `config(` transport `#[Queues(collecting:)]` key `)` → `config('event_log.queues.'.Relay::class)` → default |
-| Delivery | `config(` transport `#[Queues(sending:)]` key `)` → `config('event_log.queues.'.Delivery::class)` → default |
+| Log | `config('event_log.queues.log')` |
+| Relay | `config(` transport `#[Queues(collecting:)]` key `)` → `config('event_log.queues.relay')` → default |
+| Delivery | `config(` transport `#[Queues(sending:)]` key `)` → `config('event_log.queues.delivery')` → default |
 
 The `#[Queues]` slots hold config keys that the transport owns, not queue names. A
 transport ships its own config file with an env-backed default (for example,
 `'sending' => env('WEBHOOKS_SENDING_QUEUE')`) and points the attribute at that key
 (`#[Queues(sending: 'webhooks.queues.sending')]`). The consumer sets the env. The
 transport author never hardcodes a queue name. If the key is unset (or a typo), the
-layer's own class-keyed entry is used, then the framework default. See
+layer's own entry (`event_log.queues.relay` or `.delivery`) is used, then the
+framework default. See
 [architecture.md](architecture.md#per-layer-queue-resolution) for the full detail.
 
 ## The Delivery process step
@@ -156,7 +159,9 @@ already created instead of duplicating them.
 **One worker per record.** The three process steps (Log, Relay, Delivery) carry
 `WithoutOverlapping` middleware keyed to the record. So only one worker can execute
 a given record's process step at a time. A concurrent loser gives up
-(`dontRelease()`). The watchdog backstops a winner that then crashes. See
+(`dontRelease()`), and the lock expires after `config('event_log.locking.ttl')`
+(300 seconds by default) so a dead worker cannot hold it forever — set it longer
+than the slowest process step. The watchdog backstops a winner that then crashes. See
 [architecture.md](architecture.md#concurrency-one-worker-per-record) for the
 detail.
 
@@ -204,20 +209,23 @@ Relay::watchdog()->bite()->now();
 ```
 
 If you `->dispatch()` a `Bite` instead, it lands on that tier's layer queue
-(`config('event_log.queues.'.Model::class)`) — the same queue the tier's processing
-jobs use. So the sweep does not jump ahead of the work it cleans up.
+(`config('event_log.queues.<layer>')`) — the same queue the tier's processing jobs
+use, so the sweep does not jump ahead of the work it cleans up. The DeliveryAttempt
+sweep is the exception: it reads a key the config does not define, so it lands on
+the default queue.
 
 `Bite::handle()` finds the stuck records for its tier and fails each one.
 
 ```php
-Relay::query()
+Relay::using()::query()
     ->stuck()
     ->eachById(fn (Relay $relay) => rescue(fn () => $relay->status->fail()->now()));
 ```
 
-`stuck()` is a query-builder scope shared by all four tiers. It matches a status of
-`Pending` or `Locked` and an `updated_at` older than the grace cutoff
-(`now()->subMinutes(config('event_log.watchdog.grace'))`, 15 minutes by default).
+`stuck()` is a builder method each of the four tiers defines the same way. It
+matches a status of `Pending` or `Locked` and an `updated_at` older than the grace
+cutoff (`now()->subMinutes(config('event_log.watchdog.grace'))`, 15 minutes by
+default).
 Each fail is wrapped in `rescue()`, so one bad row does not stop the sweep.
 `eachById` chunks the scan, so a large backlog does not load into memory at once.
 
@@ -241,6 +249,14 @@ php artisan event-log:delivery-attempts:watchdog
 ```
 
 Each command defaults to `->dispatch()`. The sweep runs as a queued job on the
-tier's layer queue. Pass `--sync` to run it inline instead (useful for a one-off
+tier's layer queue (the default queue for DeliveryAttempts, whose key is not
+defined). Pass `--sync` to run it inline instead (useful for a one-off
 from the CLI). Schedule the commands to fit each tier's grace period. The sweep is
 idempotent, so running it more often than needed is harmless.
+
+## Deploy-time commands
+
+One command is not scheduled. `event-log:transportables:synchronize` refreshes the
+catalog of events that can be sent, and it runs once per deploy after
+`composer install`. See
+[architecture.md](architecture.md#the-transportable-catalog).
