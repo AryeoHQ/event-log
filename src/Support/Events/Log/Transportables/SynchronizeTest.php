@@ -47,11 +47,11 @@ final class SynchronizeTest extends TestCase
     public function it_leaves_no_duplicates_when_run_repeatedly(): void
     {
         Synchronize::make()->now();
-        $first = Transportable::pluck('alias')->all();
+        $first = Transportable::pluck('id')->all();
 
         Synchronize::make()->now();
 
-        $this->assertEqualsCanonicalizing($first, Transportable::pluck('alias')->all());
+        $this->assertEqualsCanonicalizing($first, Transportable::pluck('id')->all());
     }
 
     #[Test]
@@ -68,7 +68,7 @@ final class SynchronizeTest extends TestCase
     public function it_removes_rows_that_are_no_longer_discovered(): void
     {
         Transportable::create([
-            'alias' => 'relayable.retired',
+            'id' => 'relayable.retired',
             'class' => Updated::class,
             'transports' => [Mqtt::class],
         ]);
@@ -106,7 +106,7 @@ final class SynchronizeTest extends TestCase
     public function it_announces_the_removal_of_a_row_that_is_no_longer_discovered(): void
     {
         Transportable::create([
-            'alias' => 'relayable.retired',
+            'id' => 'relayable.retired',
             'class' => Updated::class,
             'transports' => [Mqtt::class],
         ]);
@@ -117,7 +117,7 @@ final class SynchronizeTest extends TestCase
 
         Event::assertDispatched(
             Events\Deleting::class,
-            fn (Events\Deleting $event): bool => $event->transportable->alias === 'relayable.retired',
+            fn (Events\Deleting $event): bool => $event->transportable->id === 'relayable.retired',
         );
     }
 
@@ -127,7 +127,7 @@ final class SynchronizeTest extends TestCase
         Transportable::use(ExtendedTransportable::class);
 
         ExtendedTransportable::create([
-            'alias' => 'relayable.retired',
+            'id' => 'relayable.retired',
             'class' => Updated::class,
             'transports' => [Mqtt::class],
         ]);

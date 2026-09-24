@@ -552,7 +552,7 @@ Then query it like any other model:
 ```php
 use Support\Events\Log\Transportables\Transportable;
 
-Transportable::pluck('alias');                                  // everything subscribable
+Transportable::pluck('id');                                     // everything subscribable
 Transportable::find('order.placed')->class;                     // the event class
 Transportable::whereJsonContains('transports', Webhookable::class); // everything a webhook can carry
 ```

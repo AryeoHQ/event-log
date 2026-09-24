@@ -19,12 +19,12 @@ final class Discovery
         get => $this->classes ??= collect($this->cache->get(Transports::class) ?? [])->values();
     }
 
-    /** @var Collection<int, array{alias: string, class: class-string<Transport>, transports: array<int, class-string<Transport>>}> */
+    /** @var Collection<int, array{id: string, class: class-string<Transport>, transports: array<int, class-string<Transport>>}> */
     public Collection $transportables {
         get => $this->transportables ??= $this->classes
             ->map(fn (string $class): Transport => new ReflectionClass($class)->newInstanceWithoutConstructor())
             ->map(fn (Transport $event): array => [
-                'alias' => (string) $event->alias,
+                'id' => (string) $event->alias,
                 'class' => $event::class,
                 'transports' => $event->transports->values()->all(),
             ])

@@ -29,7 +29,7 @@ final class TransportableTest extends TestCase
     public function it_keys_rows_by_alias(): void
     {
         $transportable = Transportable::create([
-            'alias' => 'relayable.updated',
+            'id' => 'relayable.updated',
             'class' => Updated::class,
             'transports' => [Mqtt::class],
         ]);
@@ -42,7 +42,7 @@ final class TransportableTest extends TestCase
     public function it_casts_transports_to_a_collection(): void
     {
         Transportable::create([
-            'alias' => 'relayable.updated',
+            'id' => 'relayable.updated',
             'class' => Updated::class,
             'transports' => [Mqtt::class],
         ]);
@@ -57,7 +57,7 @@ final class TransportableTest extends TestCase
     public function it_queries_rows_by_transport(): void
     {
         Transportable::create([
-            'alias' => 'relayable.updated',
+            'id' => 'relayable.updated',
             'class' => Updated::class,
             'transports' => [Mqtt::class],
         ]);
@@ -71,7 +71,7 @@ final class TransportableTest extends TestCase
         Event::fake([Events\Created::class, Events\Deleting::class]);
 
         Transportable::create([
-            'alias' => 'relayable.updated',
+            'id' => 'relayable.updated',
             'class' => Updated::class,
             'transports' => [Mqtt::class],
         ])->delete();
@@ -86,11 +86,11 @@ final class TransportableTest extends TestCase
         Schema::create('consumer_subscriptions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('event');
-            $table->foreign('event')->references('alias')->on('event_log_transportables');
+            $table->foreign('event')->references('id')->on('event_log_transportables');
         });
 
         $transportable = Transportable::create([
-            'alias' => 'relayable.updated',
+            'id' => 'relayable.updated',
             'class' => Updated::class,
             'transports' => [Mqtt::class],
         ]);
@@ -118,6 +118,6 @@ class ConsumerSubscription extends Model
      */
     public function transportable(): BelongsTo
     {
-        return $this->belongsTo(Transportable::class, 'event', 'alias');
+        return $this->belongsTo(Transportable::class, 'event');
     }
 }

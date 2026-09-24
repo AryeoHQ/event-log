@@ -16,11 +16,11 @@ final class Synchronize implements Action
         $transportable = Transportable::using();
 
         $transportable::query() // @phpstan-ignore staticMethod.dynamicCall
-            ->whereNotIn('alias', $discovery->transportables->pluck('alias'))
+            ->whereNotIn('id', $discovery->transportables->pluck('id'))
             ->each(fn (Transportable $stale) => $stale->delete());
 
         $discovery->transportables->each(fn (array $transport) => $transportable::updateOrCreate(
-            ['alias' => $transport['alias']],
+            ['id' => $transport['id']],
             ['class' => $transport['class'], 'transports' => $transport['transports']],
         ));
     }
