@@ -50,8 +50,13 @@ trait HasEvent
         return $this->encode($this->sign($serialized));
     }
 
-    final public function getEventAttribute(string $value): Recordable|Corrupted|Tampered
+    final public function getEventAttribute(mixed $value): Recordable|Corrupted|Tampered
     {
+        $value = match (true) {
+            is_resource($value) => (string) stream_get_contents($value, offset: 0),
+            default => (string) $value,
+        };
+
         $decoded = $this->decode($value);
 
         if ($decoded instanceof Corrupted) {
