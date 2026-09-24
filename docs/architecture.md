@@ -97,13 +97,13 @@ delivery retries. The watchdog depends on this (see [The watchdog](#the-watchdog
 
 | Column | Type | Meaning |
 |---|---|---|
-| `alias` | string PK | The `#[Alias]` string — the same value stored in `event_logs.type` |
+| `id` | string PK | The `#[Alias]` string — the same value stored in `event_logs.type` |
 | `class` | string | The event class that implements a `Transport` |
 | `transports` | json | The `Transport` interfaces that class implements |
 | `created_at` / `updated_at` | timestampsTz | Row timestamps |
 
-The key is the alias, not a uuid. So your own table can point a foreign key at
-`alias` and store the same value you already had.
+The key is the alias string, not a uuid. So your own table can point a foreign key
+at `id` and store the same value you already had.
 
 ## Swapping a model
 

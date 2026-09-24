@@ -14,7 +14,7 @@ use Support\Events\Database\Eloquent\Swappable\Models\Contracts\Swappable;
 use Support\Events\Log\Transportables\Collection\Transportables;
 
 /**
- * @property string $alias
+ * @property string $id
  * @property class-string<\Support\Events\Log\Transports\Contracts\Transport> $class
  * @property \Illuminate\Support\Collection<int, class-string<\Support\Events\Log\Transports\Contracts\Transport>> $transports
  */
@@ -30,7 +30,7 @@ class Transportable extends Model implements Swappable
 
     final protected $table = 'event_log_transportables';
 
-    final protected $primaryKey = 'alias';
+    final protected $primaryKey = 'id';
 
     final protected $keyType = 'string';
 
@@ -61,7 +61,7 @@ class Transportable extends Model implements Swappable
     ];
 
     protected $fillable = [
-        'alias',
+        'id',
         'class',
         'transports',
     ];

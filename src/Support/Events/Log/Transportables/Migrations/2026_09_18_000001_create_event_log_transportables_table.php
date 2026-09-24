@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('event_log_transportables', function (Blueprint $table): void {
-            $table->string('alias')->primary();
+            $table->string('id')->primary();
             $table->string('class');
             $table->json('transports');
             $table->timestampsTz();

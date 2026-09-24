@@ -33,7 +33,7 @@ final class DiscoveryTest extends TestCase
             ->firstWhere('class', Multiplexed::class);
 
         $this->assertNotNull($multiplexed);
-        $this->assertSame((string) new Multiplexed(new Relayable)->alias, $multiplexed['alias']);
+        $this->assertSame((string) new Multiplexed(new Relayable)->alias, $multiplexed['id']);
         $this->assertEqualsCanonicalizing([Amqp::class, Mqtt::class], $multiplexed['transports']);
     }
 }
