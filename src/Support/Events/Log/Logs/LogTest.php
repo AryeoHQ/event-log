@@ -120,6 +120,36 @@ final class LogTest extends TestCase
     }
 
     #[Test]
+    public function it_reads_event_from_a_stream_resource(): void
+    {
+        $log = Log::factory()->state([
+            'event' => new Updated(Recordable::factory()->create()),
+            'context' => Context::getFacadeRoot(),
+            'idempotency_key' => Str::uuid7()->toString(),
+            'occurred_at' => now(),
+        ])->create();
+
+        $this->assertInstanceOf(Updated::class, $log->getEventAttribute(
+            fopen('data://text/plain,'.$log->getRawOriginal('event'), 'r'),
+        ));
+    }
+
+    #[Test]
+    public function it_returns_corrupted_when_stream_is_unreadable(): void
+    {
+        $log = Log::factory()->state([
+            'event' => new Updated(Recordable::factory()->create()),
+            'context' => Context::getFacadeRoot(),
+            'idempotency_key' => Str::uuid7()->toString(),
+            'occurred_at' => now(),
+        ])->create();
+
+        $this->assertInstanceOf(Corrupted::class, $log->getEventAttribute(
+            fopen('data://text/plain,not-base64', 'r'),
+        ));
+    }
+
+    #[Test]
     public function it_throws_when_event_is_set_as_unsupported_type(): void
     {
         $this->expectException(TypeError::class);
