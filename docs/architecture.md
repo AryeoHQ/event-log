@@ -109,8 +109,8 @@ at `id` and store the same value you already had.
 
 You can replace any model with your own subclass. Call `BaseLog::use(MyLog::class)`
 and the package uses yours everywhere — relationships, factories, queries, the
-watchdog, everything. The `Swapper` behind it is `#[Scoped]`, so it resets
-automatically per request.
+watchdog, everything. The `Swapper` behind it is `#[Singleton]`, so swaps
+registered in a service provider survive queue workers, Horizon, and Octane.
 
 ### Factory, builder, and collection
 

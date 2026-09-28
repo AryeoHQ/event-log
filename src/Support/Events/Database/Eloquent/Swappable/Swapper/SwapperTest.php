@@ -7,6 +7,7 @@ namespace Support\Events\Database\Eloquent\Swappable\Swapper;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Support\Facades\Facade;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Events\Database\Eloquent\Swappable\Swapper\Exceptions\Invalid;
@@ -50,10 +51,6 @@ final class SwapperTest extends TestCase
         $this->assertSame(Subclass::class, Facades\Swapper::using(Swappable::class));
     }
 
-    /**
-     * Registering is scoped to the container, so the previous test's swap has
-     * to be gone without anything resetting it.
-     */
     #[Test]
     public function it_resets_between_tests(): void
     {
@@ -221,6 +218,17 @@ final class SwapperTest extends TestCase
         Swappable::factory()->createQuietly();
 
         $this->assertInstanceOf(Subclass::class, Swappable::first());
+    }
+
+    #[Test]
+    public function it_survives_scoped_instance_reset(): void
+    {
+        Swappable::use(Subclass::class);
+
+        $this->app->forgetScopedInstances();
+        Facade::clearResolvedInstances();
+
+        $this->assertSame(Subclass::class, Swappable::using());
     }
 
     #[Test]

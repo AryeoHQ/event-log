@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Support\Events\Database\Eloquent\Swappable\Swapper;
 
 use Closure;
-use Illuminate\Container\Attributes\Scoped;
+use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use ReflectionClass;
@@ -15,7 +15,7 @@ use Support\Events\Database\Eloquent\Swappable\Swapper\Exceptions\Invalid;
 use Support\Events\Database\Eloquent\Swappable\Swapper\Exceptions\MissingAttribute;
 use Support\Events\Database\Eloquent\Swappable\Swapper\Exceptions\NotSwappable;
 
-#[Scoped]
+#[Singleton]
 final class Swapper
 {
     /**
