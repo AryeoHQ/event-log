@@ -109,7 +109,7 @@ class Log extends Model implements Swappable
      */
     final public function relays(): HasMany
     {
-        return $this->hasMany(Relay::using(), 'event_log_id')->chaperone();
+        return $this->hasMany(Relay::using(), 'event_log_id')->chaperone('log');
     }
 
     /**

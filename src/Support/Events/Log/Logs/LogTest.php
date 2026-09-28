@@ -20,7 +20,9 @@ use Support\Events\Log\Logs\Integrity\Tampered;
 use Support\Events\Log\Logs\Status\Status;
 use Tests\Fixtures\Support\Entities\Recordable\Events\Updated;
 use Tests\Fixtures\Support\Entities\Recordable\Recordable;
+use Tests\Fixtures\Support\Entities\Relayable\Relayable;
 use Tests\Fixtures\Support\Mqtt\PayloadVersion;
+use Tests\Fixtures\Support\Swappable\SwappedLog;
 use Tests\TestCase;
 use TypeError;
 
@@ -318,5 +320,18 @@ final class LogTest extends TestCase
     public function it_resolves_no_queue_when_nothing_is_configured(): void
     {
         $this->assertNull(Log::factory()->make()->queue);
+    }
+
+    #[Test]
+    public function it_chaperones_relays_through_a_swapped_log(): void
+    {
+        Log::use(SwappedLog::class);
+
+        Relayable::factory()->create()->announceToLog();
+
+        $log = Log::with('relays')->first();
+
+        $this->assertInstanceOf(SwappedLog::class, $log);
+        $this->assertSame($log, $log->relays->first()->log);
     }
 }

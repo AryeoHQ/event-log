@@ -22,6 +22,7 @@ trait SupportsSwapping
     /** @use SealsFactory<TFactory> */
     use SealsFactory;
 
+    use SealsInstance;
     use SealsSchema;
 
     /**

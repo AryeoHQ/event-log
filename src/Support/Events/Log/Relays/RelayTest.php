@@ -13,6 +13,7 @@ use Support\Events\Log\Logs\Log;
 use Tests\Fixtures\Support\Entities\Relayable\Relayable;
 use Tests\Fixtures\Support\Mqtt\Mqtt;
 use Tests\Fixtures\Support\Mqtt\Queued;
+use Tests\Fixtures\Support\Swappable\SwappedRelay;
 use Tests\TestCase;
 
 #[CoversClass(Relay::class)]
@@ -68,5 +69,18 @@ final class RelayTest extends TestCase
     public function it_resolves_no_queue_when_nothing_is_configured(): void
     {
         $this->assertNull(Relay::factory()->mqtt(Mqtt::class)->createQuietly()->queue);
+    }
+
+    #[Test]
+    public function it_chaperones_deliveries_through_a_swapped_relay(): void
+    {
+        Relay::use(SwappedRelay::class);
+
+        Relayable::factory()->create()->announceToLog();
+
+        $relay = Relay::with('deliveries')->first();
+
+        $this->assertInstanceOf(SwappedRelay::class, $relay);
+        $this->assertSame($relay, $relay->deliveries->first()->relay);
     }
 }
