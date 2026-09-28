@@ -135,7 +135,7 @@ class Delivery extends Model implements Swappable
      */
     final public function attempts(): HasMany
     {
-        return $this->hasMany(DeliveryAttempt::using(), 'event_log_delivery_id')->chaperone();
+        return $this->hasMany(DeliveryAttempt::using(), 'event_log_delivery_id')->chaperone('delivery');
     }
 
     /**

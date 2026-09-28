@@ -16,6 +16,7 @@ use Tests\Fixtures\Support\Entities\Relayable\Relayable;
 use Tests\Fixtures\Support\Mqtt\Collecting\Events\NeedsEnvelopes;
 use Tests\Fixtures\Support\Mqtt\PayloadVersion;
 use Tests\Fixtures\Support\Mqtt\Queued;
+use Tests\Fixtures\Support\Swappable\SwappedDelivery;
 use Tests\TestCase;
 
 #[CoversClass(Delivery::class)]
@@ -161,5 +162,18 @@ final class DeliveryTest extends TestCase
     public function it_resolves_no_queue_when_nothing_is_configured(): void
     {
         $this->assertNull(Delivery::factory()->mqtt()->createQuietly()->queue);
+    }
+
+    #[Test]
+    public function it_chaperones_attempts_through_a_swapped_delivery(): void
+    {
+        Delivery::use(SwappedDelivery::class);
+
+        Relayable::factory()->create()->announceToLog();
+
+        $delivery = Delivery::with('attempts')->first();
+
+        $this->assertInstanceOf(SwappedDelivery::class, $delivery);
+        $this->assertSame($delivery, $delivery->attempts->first()->delivery);
     }
 }

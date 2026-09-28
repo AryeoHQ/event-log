@@ -112,7 +112,7 @@ class Relay extends Model implements Swappable
      */
     final public function deliveries(): HasMany
     {
-        return $this->hasMany(Delivery::using(), 'event_log_relay_id')->chaperone();
+        return $this->hasMany(Delivery::using(), 'event_log_relay_id')->chaperone('relay');
     }
 
     final public static function watchdog(): Watchdog\Watchdog

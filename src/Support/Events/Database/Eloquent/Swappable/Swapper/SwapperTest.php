@@ -214,6 +214,16 @@ final class SwapperTest extends TestCase
     }
 
     #[Test]
+    public function it_hydrates_the_swapped_class_from_a_query(): void
+    {
+        Swappable::use(Subclass::class);
+
+        Swappable::factory()->createQuietly();
+
+        $this->assertInstanceOf(Subclass::class, Swappable::first());
+    }
+
+    #[Test]
     public function it_rejects_a_foreign_event(): void
     {
         $this->expectException(Invalid::class);
