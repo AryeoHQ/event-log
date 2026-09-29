@@ -57,6 +57,7 @@ abstract class TestCase extends Testbench\TestCase
         Schema::create('swappables', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
+            $table->string('hooked')->nullable();
             $table->timestamps();
         });
 

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static string declared(string $model, string $attribute)
  * @method static bool isSwappable(string $model)
  * @method static string origin(string $model)
- * @method static void consolidate(\Illuminate\Database\Eloquent\Model $model)
+ * @method static void consolidate(\Illuminate\Database\Eloquent\Model $model, bool $waking = false)
  * @method static void validateEvents(\Illuminate\Database\Eloquent\Model $model)
  * @method static array<array-key, mixed> inherited(string $model, string $property)
  *

@@ -12,6 +12,15 @@ use Support\Events\Database\Eloquent\Swappable\Swapper\Facades\Swapper;
  */
 trait SealsBuilder
 {
+    final public function newQuery()
+    {
+        if (static::using() !== static::class) {
+            return $this->newInstance()->newQuery(); // @phpstan-ignore return.type
+        }
+
+        return parent::newQuery(); // @phpstan-ignore return.type
+    }
+
     /**
      * @param  \Illuminate\Database\Query\Builder  $query
      * @return TBuilder

@@ -11,12 +11,15 @@ use Illuminate\Database\Eloquent\Model;
 use Support\Events\Database\Eloquent\Swappable\Models\Concerns\SupportsSwapping;
 use Support\Events\Database\Eloquent\Swappable\Models\Contracts\Swappable as SwappableContract;
 use Tests\Fixtures\Support\Swappable\Collection\Swappables;
+use Tests\Fixtures\Support\Swappable\Concerns\Hooked;
 
 #[CollectedBy(Swappables::class)]
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
 class Swappable extends Model implements SwappableContract
 {
+    use Hooked;
+
     /** @use SupportsSwapping<Factory, Builder> */
     use SupportsSwapping;
 
@@ -44,6 +47,11 @@ class Swappable extends Model implements SwappableContract
     protected $dispatchesEvents = [
         'created' => Events\Created::class,
     ];
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = ['name' => 'origin'];
 
     /**
      * @var array<string, string>
