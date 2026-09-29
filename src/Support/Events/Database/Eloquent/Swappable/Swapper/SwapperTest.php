@@ -20,6 +20,7 @@ use Tests\Fixtures\Support\Swappable\Builder;
 use Tests\Fixtures\Support\Swappable\Collection\Swappables;
 use Tests\Fixtures\Support\Swappable\Events;
 use Tests\Fixtures\Support\Swappable\Factory;
+use Tests\Fixtures\Support\Swappable\ScopedSubclass;
 use Tests\Fixtures\Support\Swappable\Subclass;
 use Tests\Fixtures\Support\Swappable\SubclassWithForeignEvent;
 use Tests\Fixtures\Support\Swappable\Swappable;
@@ -157,6 +158,132 @@ final class SwapperTest extends TestCase
     }
 
     #[Test]
+    public function it_keeps_hook_attributes_on_the_origin(): void
+    {
+        $this->assertSame('hooked', (new Swappable)->getAttributes()['hooked']);
+    }
+
+    #[Test]
+    public function it_keeps_hook_attributes_on_a_subclass(): void
+    {
+        $this->assertSame('hooked', (new Subclass)->getAttributes()['hooked']);
+    }
+
+    #[Test]
+    public function it_keeps_hook_casts(): void
+    {
+        $this->assertSame('string', (new Subclass)->getCasts()['hooked']);
+    }
+
+    #[Test]
+    public function it_lets_the_package_win_on_hook_casts(): void
+    {
+        $this->assertSame('string', (new Swappable)->getCasts()['name']);
+        $this->assertSame('string', (new Subclass)->getCasts()['name']);
+    }
+
+    #[Test]
+    public function it_lets_the_package_win_on_attribute_defaults(): void
+    {
+        $this->assertSame('origin', (new Subclass)->getAttributes()['name']);
+    }
+
+    #[Test]
+    public function it_lets_the_package_win_on_hook_attributes(): void
+    {
+        $this->assertSame('origin', (new Swappable)->getAttributes()['name']);
+        $this->assertSame('origin', (new Subclass)->getAttributes()['name']);
+    }
+
+    #[Test]
+    public function it_keeps_filled_attributes(): void
+    {
+        $this->assertSame('filled', (new Subclass(['name' => 'filled']))->getAttributes()['name']);
+    }
+
+    #[Test]
+    public function it_builds_a_clean_model(): void
+    {
+        $this->assertFalse((new Subclass)->isDirty());
+    }
+
+    #[Test]
+    public function it_keeps_attributes_through_serialization(): void
+    {
+        $subclass = new Subclass;
+        $subclass->setRawAttributes(['id' => 1, 'name' => 'stored'], true);
+
+        $woken = unserialize(serialize($subclass));
+
+        // Laravel re-runs the hook on wake; the package defaults must not follow it.
+        $this->assertInstanceOf(Subclass::class, $woken);
+        $this->assertSame(['id' => 1, 'name' => 'hooked', 'hooked' => 'hooked'], $woken->getAttributes());
+    }
+
+    #[Test]
+    public function it_keeps_log_attributes_through_serialization(): void
+    {
+        $log = new Log;
+        $log->setRawAttributes(['id' => 'id', 'status' => 'processed'], true);
+
+        $woken = unserialize(serialize($log));
+
+        $this->assertInstanceOf(Log::class, $woken);
+        $this->assertSame(['id' => 'id', 'status' => 'processed'], $woken->getAttributes());
+        $this->assertFalse($woken->isDirty());
+    }
+
+    #[Test]
+    public function it_keeps_casts_through_serialization(): void
+    {
+        $woken = unserialize(serialize(new Subclass));
+
+        $this->assertInstanceOf(Subclass::class, $woken);
+        $this->assertSame('string', $woken->getCasts()['name']);
+        $this->assertSame('boolean', $woken->getCasts()['extra']);
+    }
+
+    #[Test]
+    public function it_keeps_events_through_serialization(): void
+    {
+        $woken = unserialize(serialize(new Subclass));
+
+        $this->assertInstanceOf(Subclass::class, $woken);
+        $this->assertSame(Events\SubclassCreated::class, $woken->dispatchesEvents()['created']);
+    }
+
+    #[Test]
+    public function it_applies_defaults_after_a_wake(): void
+    {
+        unserialize(serialize(new Subclass));
+
+        $this->assertSame('origin', (new Subclass)->getAttributes()['name']);
+    }
+
+    #[Test]
+    public function it_keeps_stored_attributes_from_a_query(): void
+    {
+        Swappable::use(Subclass::class);
+
+        Swappable::factory()->createQuietly(['name' => 'stored', 'hooked' => 'stored']);
+
+        $fetched = Swappable::first();
+
+        $this->assertInstanceOf(Subclass::class, $fetched);
+        $this->assertSame('stored', $fetched->getAttributes()['name']);
+        $this->assertSame('stored', $fetched->getAttributes()['hooked']);
+        $this->assertFalse($fetched->isDirty());
+    }
+
+    #[Test]
+    public function it_keeps_created_attributes_on_refresh(): void
+    {
+        $subclass = Subclass::query()->create(['name' => 'stored']);
+
+        $this->assertSame('stored', $subclass->fresh()?->getAttributes()['name']);
+    }
+
+    #[Test]
     public function it_lets_the_consumer_win_on_events(): void
     {
         $subclass = new Subclass;
@@ -218,6 +345,21 @@ final class SwapperTest extends TestCase
         Swappable::factory()->createQuietly();
 
         $this->assertInstanceOf(Subclass::class, Swappable::first());
+    }
+
+    #[Test]
+    public function it_applies_the_swapped_class_scopes_to_a_query(): void
+    {
+        Swappable::use(ScopedSubclass::class);
+
+        Swappable::factory()->createQuietly(['name' => 'visible']);
+        Swappable::factory()->createQuietly(['name' => 'hidden']);
+
+        $fetched = Swappable::all();
+
+        $this->assertCount(1, $fetched);
+        $this->assertContainsOnlyInstancesOf(ScopedSubclass::class, $fetched);
+        $this->assertSame('visible', $fetched->first()?->getAttributes()['name']);
     }
 
     #[Test]

@@ -7,16 +7,16 @@ namespace Tests\Fixtures\Support\Swappable;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Tests\Fixtures\Support\Swappable\Collection\Swappables;
 
 #[CollectedBy(Swappables::class)]
 #[UseEloquentBuilder(Builder::class)]
 #[UseFactory(Factory::class)]
-final class Subclass extends Swappable
+final class ScopedSubclass extends Swappable
 {
-    protected $attributes = ['name' => 'subclass'];
-
-    protected $casts = ['name' => 'boolean', 'extra' => 'boolean'];
-
-    protected $dispatchesEvents = ['created' => Events\SubclassCreated::class];
+    protected static function booted(): void
+    {
+        self::addGlobalScope('visible', fn (EloquentBuilder $query) => $query->where('name', 'visible'));
+    }
 }

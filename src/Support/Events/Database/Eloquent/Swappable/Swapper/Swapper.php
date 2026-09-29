@@ -112,10 +112,10 @@ final class Swapper
             ?? $model;
     }
 
-    public function consolidate(Model $model): void
+    public function consolidate(Model $model, bool $waking = false): void
     {
         $consolidated = $this->mergeConsumerMaps($model)
-            ->merge($this->mergePackageMaps($model))
+            ->merge($this->mergePackageMaps($model, $waking))
             ->merge($this->appendLists($model));
 
         Closure::bind(
@@ -142,17 +142,22 @@ final class Swapper
     }
 
     /** @phpstan-ignore missingType.generics */
-    private function mergePackageMaps(Model $model): Collection
+    private function mergePackageMaps(Model $model, bool $waking): Collection
     {
+        $reflection = new ReflectionClass($model);
         $originDefaults = (new ReflectionClass($this->origin($model::class)))->getDefaultProperties();
 
-        return collect(self::PACKAGE_MAPS)->mapWithKeys(
-            fn (string $property) => [
-                $property => collect($this->inherited($model::class, $property))
-                    ->merge($originDefaults[$property] ?? [])
-                    ->all(),
-            ]
-        );
+        return collect(self::PACKAGE_MAPS)
+            // A woken model's attributes are its data, not defaults.
+            ->reject(fn (string $property): bool => $waking && $property === 'attributes')
+            ->mapWithKeys(
+                fn (string $property) => [
+                    $property => collect($this->inherited($model::class, $property))
+                        ->merge($reflection->getProperty($property)->getValue($model))
+                        ->merge($originDefaults[$property] ?? [])
+                        ->all(),
+                ]
+            );
     }
 
     /** @phpstan-ignore missingType.generics */
