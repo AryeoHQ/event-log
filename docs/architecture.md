@@ -434,8 +434,7 @@ class. PHP forbids a class from redeclaring a trait property as a hooked one, so
 they cannot use the `$queue` hook. They assign
 `$this->queue = config('event_log.queues.<layer>')` in their constructor instead —
 the same layer queue, set at construction rather than on read. The
-DeliveryAttempt `Bite` is the exception: it reads `queues.delivery_attempt`, which
-the config does not define, so that sweep lands on the default queue.
+DeliveryAttempt `Bite` has no queue of its own, so it uses `queues.delivery`.
 
 ## Concurrency: one worker per record
 
@@ -493,7 +492,7 @@ as any other failure — a durable, observable record instead of an orphan.
 Each tier registers its own command
 (`{Tier}/Watchdog/Console/Commands/Watchdog.php`, `event-log:{tier}:watchdog`).
 The command resolves the tier's `Bite` and, by default, `->dispatch()`es it.
-`--sync` runs it inline. Separate commands let each tier run on its own schedule.
+`--sync` runs it inline. The provider schedules all four every five minutes.
 See [lifecycle.md](lifecycle.md#the-watchdog) for the operational detail.
 
 Each `Bite` sets its `$queue` in the constructor to
@@ -501,8 +500,9 @@ Each `Bite` sets its `$queue` in the constructor to
 constructor assignment, not a hook, because `Bite` uses `AsAction` directly.) A
 sweep spans the whole table, not one transport, so there is no `#[Queues]` slot to
 consult. So a `->dispatch()`ed sweep for the Log, Relay, and Delivery tiers runs
-on the same layer queue its processing jobs use. The DeliveryAttempt sweep reads a
-key the config does not define and falls to the default queue.
+on the same layer queue its processing jobs use. The DeliveryAttempt sweep has no
+queue of its own, so it uses `queues.delivery`. Each `Bite` is `ShouldBeUnique`,
+so a new sweep won't queue while the last one is still waiting or running.
 
 ## Performance and indexing
 

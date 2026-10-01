@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace Support\Events\Log\Providers;
 
+use Illuminate\Console\Application;
+use Illuminate\Console\Scheduling\Event;
+use Illuminate\Console\Scheduling\Schedule;
 use Orchestra\Testbench\Attributes\WithEnv;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 use Support\Events\Dispatcher\Mixins\DisablesSerializesModels;
+use Support\Events\Log\Deliveries;
+use Support\Events\Log\DeliveryAttempts;
 use Support\Events\Log\Dispatcher\Dispatcher;
+use Support\Events\Log\Logs;
+use Support\Events\Log\Relays;
 use Tests\TestCase;
 
 #[CoversClass(Provider::class)]
@@ -52,5 +59,38 @@ final class ProviderTest extends TestCase
     public function it_loads_migrations(): void
     {
         $this->assertTrue(\Illuminate\Support\Facades\Schema::hasTable('event_logs'));
+    }
+
+    #[Test]
+    public function it_schedules_the_watchdogs(): void
+    {
+        $scheduled = collect(resolve(Schedule::class)->events())
+            ->filter(fn (Event $event) => $event->expression === '*/5 * * * *' && $event->onOneServer && $event->withoutOverlapping)
+            ->pluck('command');
+
+        collect([
+            Logs\Watchdog\Console\Commands\Watchdog::class,
+            Relays\Watchdog\Console\Commands\Watchdog::class,
+            Deliveries\Watchdog\Console\Commands\Watchdog::class,
+            DeliveryAttempts\Watchdog\Console\Commands\Watchdog::class,
+        ])->each(
+            fn (string $command) => $this->assertContains(Application::formatCommandString(resolve($command)->getName()), $scheduled),
+        );
+    }
+
+    #[Test]
+    #[WithEnv('EVENT_LOG_ENABLED', 'false')]
+    public function it_does_not_schedule_the_watchdogs_when_disabled(): void
+    {
+        $scheduled = collect(resolve(Schedule::class)->events())->pluck('command');
+
+        collect([
+            Logs\Watchdog\Console\Commands\Watchdog::class,
+            Relays\Watchdog\Console\Commands\Watchdog::class,
+            Deliveries\Watchdog\Console\Commands\Watchdog::class,
+            DeliveryAttempts\Watchdog\Console\Commands\Watchdog::class,
+        ])->each(
+            fn (string $command) => $this->assertNotContains(Application::formatCommandString(resolve($command)->getName()), $scheduled),
+        );
     }
 }

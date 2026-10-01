@@ -211,8 +211,8 @@ Relay::watchdog()->bite()->now();
 If you `->dispatch()` a `Bite` instead, it lands on that tier's layer queue
 (`config('event_log.queues.<layer>')`) — the same queue the tier's processing jobs
 use, so the sweep does not jump ahead of the work it cleans up. The DeliveryAttempt
-sweep is the exception: it reads a key the config does not define, so it lands on
-the default queue.
+sweep uses the delivery queue. A sweep is a unique job, so if the last one is still
+waiting or running, the next one isn't queued.
 
 `Bite::handle()` finds the stuck records for its tier and fails each one.
 
@@ -239,7 +239,12 @@ watchdog never fails a record that is only slow.
 
 ### Running it
 
-The package registers one command per tier. So each tier runs on its own schedule.
+The package registers one command per tier and schedules all four for you, every
+five minutes, on one server, without overlapping. You don't need to add them to
+your app's scheduler. Just make sure `schedule:run` is running. If you run the
+scheduler on more than one server, your default cache needs to be shared and
+support locks (like Redis), or each server will run them. Nothing is scheduled
+when `EVENT_LOG_ENABLED=false`.
 
 ```
 php artisan event-log:logs:watchdog
@@ -249,9 +254,8 @@ php artisan event-log:delivery-attempts:watchdog
 ```
 
 Each command defaults to `->dispatch()`. The sweep runs as a queued job on the
-tier's layer queue (the default queue for DeliveryAttempts, whose key is not
-defined). Pass `--sync` to run it inline instead (useful for a one-off
-from the CLI). Schedule the commands to fit each tier's grace period. The sweep is
+tier's layer queue (DeliveryAttempts use the delivery queue). Pass `--sync` to
+run it inline instead (useful for a one-off from the CLI). The sweep is
 idempotent, so running it more often than needed is harmless.
 
 ## Deploy-time commands

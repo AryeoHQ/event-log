@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Support\Events\Log\Providers;
 
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Support\Events\Dispatcher\Mixins\DisablesSerializesModels;
 use Support\Events\Log\Deliveries;
@@ -30,6 +31,7 @@ final class Provider extends ServiceProvider
         $this->bootMigrations();
         $this->bootListeners();
         $this->bootCommands();
+        $this->bootSchedule();
     }
 
     private function registerConfig(): void
@@ -89,5 +91,19 @@ final class Provider extends ServiceProvider
             DeliveryAttempts\Watchdog\Console\Commands\Watchdog::class,
             Transportables\Console\Commands\Synchronize::class,
         ]);
+    }
+
+    private function bootSchedule(): void
+    {
+        if (! $this->app->runningInConsole() || ! config('event_log.enabled')) {
+            return;
+        }
+
+        Schedule::everyFiveMinutes()->onOneServer()->withoutOverlapping()->group(function (): void {
+            Schedule::command(Logs\Watchdog\Console\Commands\Watchdog::class);
+            Schedule::command(Relays\Watchdog\Console\Commands\Watchdog::class);
+            Schedule::command(Deliveries\Watchdog\Console\Commands\Watchdog::class);
+            Schedule::command(DeliveryAttempts\Watchdog\Console\Commands\Watchdog::class);
+        });
     }
 }

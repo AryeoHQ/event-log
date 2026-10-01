@@ -620,8 +620,11 @@ php artisan event-log:deliveries:watchdog
 php artisan event-log:delivery-attempts:watchdog
 ```
 
-Each queues the sweep by default (add `--sync` to run inline). Schedule them to
-match each tier's grace period; the sweep is idempotent. See
+The package schedules all four every five minutes (on one server, without
+overlapping), so you don't need to add them to your scheduler. On more than one
+server, your default cache needs to be shared and support locks (like Redis).
+Nothing is scheduled when `EVENT_LOG_ENABLED=false`. Each queues the
+sweep by default (add `--sync` to run inline); the sweep is idempotent. See
 [docs/lifecycle.md](docs/lifecycle.md#the-watchdog) for details.
 
 ---
