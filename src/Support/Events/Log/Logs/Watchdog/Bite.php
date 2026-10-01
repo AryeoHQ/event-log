@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Support\Events\Log\Logs\Watchdog;
 
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Support\Actions\Concerns\AsAction;
 use Support\Actions\Contracts\Action;
 use Support\Events\Log\Logs\Log;
 
-final class Bite implements Action
+final class Bite implements Action, ShouldBeUnique
 {
     use AsAction;
+
+    public int $uniqueFor = 3600;
 
     public function __construct()
     {
