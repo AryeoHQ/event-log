@@ -27,11 +27,11 @@ use Tests\TestCase;
 final class LogEventTest extends TestCase
 {
     #[Test]
-    public function it_implements_should_be_unique(): void
+    public function it_does_not_take_a_unique_lock(): void
     {
-        $this->assertContains(
+        $this->assertNotContains(
             ShouldBeUnique::class,
-            class_implements(LogEvent::class),
+            class_implements(LogEvent::class)
         );
     }
 
