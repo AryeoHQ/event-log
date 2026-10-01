@@ -136,6 +136,17 @@ final class LogEventTest extends TestCase
     }
 
     #[Test]
+    public function it_records_type_as_a_string_on_the_created_instance(): void
+    {
+        $event = new Updated(Recordable::factory()->create());
+
+        LogEvent::make($event)->now();
+
+        $this->assertIsString($event->log->type);
+        $this->assertSame($event->alias->toString(), $event->log->type);
+    }
+
+    #[Test]
     public function it_records_loggable_morph_from_recordable(): void
     {
         $recordable = Recordable::factory()->create();

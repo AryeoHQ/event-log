@@ -32,7 +32,7 @@ trait HasEvent
         $this->attributes['event'] = $this->prepareEvent($event);
 
         $this->forceFill([
-            'type' => $this->event->alias,
+            'type' => $this->event->alias->toString(),
             'loggable' => $this->event->loggable,
             'data' => $event->loggable->toLoggable(),
         ]);
