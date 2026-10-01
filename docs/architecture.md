@@ -228,8 +228,11 @@ and no overhead.
 
 ### The `LogEvent` action
 
-`Actions\LogEvent` is an `AsAction` and a `ShouldBeUnique` (its `uniqueId` is a
-UUIDv7). It sets `$tries = 3` and `$backoff = [10, 60, 300]`. The decorator calls
+`Actions\LogEvent` is an `AsAction`. It gets a UUIDv7 `uniqueId` when it's built,
+and that id is the `Log`'s `idempotency_key`, so a queued retry finds the row the
+sync run already wrote. It's not a `ShouldBeUnique`: every event gets its own id,
+so the lock could never block anything, and a killed worker would leave the key
+behind forever. It sets `$tries = 3` and `$backoff = [10, 60, 300]`. The decorator calls
 it with `dispatchAfterFailed()`, so a synchronous failure re-queues once. The
 action does this work:
 
