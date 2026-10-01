@@ -62,7 +62,7 @@ final class TransportableTest extends TestCase
             'transports' => [Mqtt::class],
         ]);
 
-        $this->assertSame(1, Transportable::whereJsonContains('transports', Mqtt::class)->count()); // @phpstan-ignore staticMethod.dynamicCall
+        $this->assertSame(1, Transportable::query()->transportedByAny(Mqtt::class)->count()); // @phpstan-ignore staticMethod.dynamicCall
     }
 
     #[Test]
