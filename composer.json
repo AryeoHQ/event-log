@@ -10,9 +10,9 @@
             "type": "vcs",
             "url": "https://github.com/AryeoHQ/actions"
         },
-        "eloquent-state-machine": {
+        "eloquent-state-machines": {
             "type": "vcs",
-            "url": "https://github.com/AryeoHQ/eloquent-state-machine"
+            "url": "https://github.com/AryeoHQ/eloquent-state-machines"
         }
     },
     "require": {
