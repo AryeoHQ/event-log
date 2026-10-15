@@ -18,10 +18,10 @@
     "require": {
         "php": "^8.4",
         "laravel/framework": "^12.37 || ^13",
-        "aryeo/actions": "0.0.21",
-        "aryeo/eloquent-state-machines": "0.0.32",
+        "aryeo/actions": "0.0.22",
+        "aryeo/eloquent-state-machines": "0.0.33",
         "nesbot/carbon": "^3.11",
-        "aryeo/tooling-laravel": "0.0.39",
+        "aryeo/tooling-laravel": "0.0.40",
         "phpstan/phpstan": "^2.1",
         "nikic/php-parser": "^5.0"
     },
