@@ -1,6 +1,8 @@
 {
     "name": "aryeo/event-log",
+    "description": "Records class-backed Laravel events to the database and relays them to external recipients.",
     "type": "library",
+    "license": "MIT",
     "repositories": {
         "tooling-laravel": {
             "type": "vcs",
@@ -10,18 +12,18 @@
             "type": "vcs",
             "url": "https://github.com/AryeoHQ/actions"
         },
-        "eloquent-state-machine": {
+        "eloquent-state-machines": {
             "type": "vcs",
-            "url": "https://github.com/AryeoHQ/eloquent-state-machine"
+            "url": "https://github.com/AryeoHQ/eloquent-state-machines"
         }
     },
     "require": {
         "php": "^8.4",
         "laravel/framework": "^12.37 || ^13",
-        "aryeo/actions": "0.0.22",
-        "aryeo/eloquent-state-machines": "0.0.33",
+        "aryeo/actions": "0.0.23",
+        "aryeo/eloquent-state-machines": "0.0.34",
         "nesbot/carbon": "^3.11",
-        "aryeo/tooling-laravel": "0.0.40",
+        "aryeo/tooling-laravel": "0.0.41",
         "phpstan/phpstan": "^2.1",
         "nikic/php-parser": "^5.0"
     },
