@@ -10,6 +10,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Support\Events\Database\Eloquent\Swappable\Swapper\Facades\Swapper;
 use Support\Events\Log\Envelopes\Envelope;
+use Support\Events\Log\Logs\Data\Data;
+use Support\Events\Log\Logs\Data\Variant;
 use Support\Events\Log\Logs\Log;
 use Tests\Fixtures\Support\Entities\Recordable\Recordable;
 use Tests\Fixtures\Support\Entities\Relayable\Relayable;
@@ -53,6 +55,21 @@ final class DeliveryTest extends TestCase
 
         $this->assertSame(PayloadVersion::V1->value, $delivery->version);
         $this->assertSame(data_get(Log::first()->data, PayloadVersion::V1->value), $delivery->payload);
+    }
+
+    #[Test]
+    public function it_resolves_the_versioned_slice_of_data_when_the_version_holds_a_dot(): void
+    {
+        $delivery = $this->deliveryWithDottedVersion();
+
+        $this->assertSame(PayloadVersion::ReaderV1->value, $delivery->version);
+        $this->assertSame(['id' => 'reader-payload'], $delivery->payload);
+    }
+
+    #[Test]
+    public function it_is_deliverable_when_the_version_holds_a_dot(): void
+    {
+        $this->assertTrue($this->deliveryWithDottedVersion()->is_deliverable);
     }
 
     #[Test]
@@ -175,5 +192,23 @@ final class DeliveryTest extends TestCase
 
         $this->assertInstanceOf(SwappedDelivery::class, $delivery);
         $this->assertSame($delivery, $delivery->attempts->first()->delivery);
+    }
+
+    private function deliveryWithDottedVersion(): Delivery
+    {
+        Event::forget(NeedsEnvelopes::class);
+        Event::listen(NeedsEnvelopes::class, function (NeedsEnvelopes $event): void {
+            $event->add(Envelope::make(recipient: Recordable::factory()->create(), version: PayloadVersion::ReaderV1));
+        });
+
+        Relayable::factory()->create()->announceToLog();
+
+        Log::first()
+            ->forceFill([
+                'data' => Data::of(Variant::make(collect(['id' => 'reader-payload']), version: PayloadVersion::ReaderV1)),
+            ])
+            ->saveQuietly();
+
+        return Delivery::first();
     }
 }

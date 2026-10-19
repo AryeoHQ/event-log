@@ -11,4 +11,6 @@ enum PayloadVersion: string implements Version
     case V1 = 'v1';
 
     case V2 = 'v2';
+
+    case ReaderV1 = 'reader.v1';
 }
