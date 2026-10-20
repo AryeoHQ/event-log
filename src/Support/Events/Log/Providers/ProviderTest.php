@@ -7,6 +7,7 @@ namespace Support\Events\Log\Providers;
 use Illuminate\Console\Application;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Event as EventFacade;
 use Orchestra\Testbench\Attributes\WithEnv;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,6 +34,12 @@ final class ProviderTest extends TestCase
     public function it_decorates_the_event_dispatcher_when_enabled(): void
     {
         $this->assertInstanceOf(Dispatcher::class, app('events'));
+    }
+
+    #[Test]
+    public function it_decorates_the_event_facade_when_it_was_resolved_before_registering(): void
+    {
+        $this->assertInstanceOf(Dispatcher::class, EventFacade::getFacadeRoot());
     }
 
     #[Test]
