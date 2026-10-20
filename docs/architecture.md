@@ -221,10 +221,17 @@ if (! config('event_log.enabled')) {
 }
 
 $this->app->extend('events', fn ($original) => new Dispatcher($original));
+
+Event::clearResolvedInstance();
 ```
 
 When the package is disabled, the decorator is never bound. There is no recording
 and no overhead.
+
+The facade has to be cleared because `extend()` only changes the container
+binding. If another provider used `Event::` in its `register()` before this one
+ran, the facade still holds the plain dispatcher, and anything sent through
+`Event::dispatch()` (like state machine events) would skip recording.
 
 ### The `LogEvent` action
 

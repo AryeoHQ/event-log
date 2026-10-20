@@ -11,6 +11,7 @@ use Orchestra\Testbench;
 use Support\Events\Log;
 use Tests\Fixtures\Support\Amqp;
 use Tests\Fixtures\Support\Mqtt;
+use Tests\Fixtures\Support\ResolvesEventFacade;
 
 abstract class TestCase extends Testbench\TestCase
 {
@@ -24,6 +25,7 @@ abstract class TestCase extends Testbench\TestCase
     protected function getPackageProviders($app): array
     {
         return [
+            ResolvesEventFacade\Providers\Provider::class, // Registered first so the facade caches the plain dispatcher before event-log decorates it.
             Log\Providers\Provider::class,
             Mqtt\Providers\Provider::class,
             Amqp\Providers\Provider::class,

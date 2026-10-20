@@ -51,6 +51,8 @@ final class Provider extends ServiceProvider
         }
 
         $this->app->extend('events', fn (\Illuminate\Events\Dispatcher $original) => new Dispatcher($original));
+
+        Event::clearResolvedInstance();
     }
 
     private function registerCollectors(): void
