@@ -88,10 +88,12 @@ final class ProcessTest extends TestCase
 
         $log = Log::factory()->mqtt()->locked()->createQuietly();
 
+        $trigger = $log->status->process();
+
         $log->status->process()->now();
 
         // A redelivered job unserializes the model as Processed while the trigger still expects Locked.
-        $log->status->process()->now();
+        $trigger->on($log->fresh())->now();
 
         Fail::assertNotFired();
         $this->assertSame(LogStatus::Processed, $log->fresh()->status->enum);
