@@ -181,7 +181,8 @@ class Delivery extends Model implements Swappable
                 return $this->relay->log->data;
             }
 
-            $versioned = data_get($this->relay->log->data, $this->version);
+            $data = $this->relay->log->data;
+            $versioned = is_array($data) ? ($data[$this->version] ?? null) : null;
 
             return is_array($versioned) ? $versioned : null;
         });
@@ -192,10 +193,19 @@ class Delivery extends Model implements Swappable
      */
     final protected function isDeliverable(): Attribute
     {
-        return Attribute::get(
-            fn (): bool => $this->recipient !== null
-                && ($this->version === null || data_has($this->relay->log->data, $this->version))
-        );
+        return Attribute::get(function (): bool {
+            if ($this->recipient === null) {
+                return false;
+            }
+
+            if ($this->version === null) {
+                return true;
+            }
+
+            $data = $this->relay->log->data;
+
+            return is_array($data) && array_key_exists($this->version, $data);
+        });
     }
 
     final public static function watchdog(): Watchdog\Watchdog
