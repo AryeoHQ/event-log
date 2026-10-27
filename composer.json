@@ -11,12 +11,12 @@
         }
     },
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "laravel/framework": "^12.43 || ^13",
-        "aryeo/actions": "0.0.23",
-        "aryeo/eloquent-state-machines": "0.0.34",
+        "aryeo/actions": "0.0.24",
+        "aryeo/eloquent-state-machines": "0.0.35",
         "nesbot/carbon": "^3.11",
-        "aryeo/tooling-laravel": "0.0.41",
+        "aryeo/tooling-laravel": "0.0.43",
         "phpstan/phpstan": "^2.1",
         "nikic/php-parser": "^5.0"
     },
@@ -32,7 +32,12 @@
         "psr-4": {
             "Support\\": "src/Support",
             "Tooling\\": "src/Tooling"
-        }
+        },
+        "exclude-from-classmap": [
+            "*Test.php",
+            "*TestCases.php",
+            "tests/Fixtures/Tooling"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

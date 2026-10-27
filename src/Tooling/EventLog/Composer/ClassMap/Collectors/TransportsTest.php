@@ -6,6 +6,7 @@ namespace Tooling\EventLog\Composer\ClassMap\Collectors;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionClass;
 use Support\Events\Log\Transports\Contracts\Transport;
 use Tests\Fixtures\Support\Entities\Relayable\Events\Multiplexed;
 use Tests\Fixtures\Support\Entities\Relayable\Events\Updated;
@@ -24,7 +25,13 @@ final class TransportsTest extends TestCase
     #[Test]
     public function it_collects_only_concrete_classes_implementing_transport(): void
     {
-        $collected = new Transports()->collect(resolve(Composer::class)->sourcePsr4ClassMap->keys());
+        $reflections = resolve(Composer::class)->sourcePsr4ClassMap->keys()
+            ->mapWithKeys(fn (string $class): array => [$class => rescue(fn (): ReflectionClass => new ReflectionClass($class), report: false)])
+            ->filter();
+
+        $collected = $reflections
+            ->filter(fn (ReflectionClass $class): bool => new Transports()->collects($class, $reflections->all()))
+            ->keys();
 
         $this->assertTrue($collected->contains(Updated::class));
         $this->assertTrue($collected->contains(Multiplexed::class));
