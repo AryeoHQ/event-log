@@ -163,10 +163,13 @@ which a query cannot do and a foreign key cannot reference.
 the alias and the transport interfaces. Both properties memoize, so repeated reads
 in one request cost nothing.
 
-`Transportables\Synchronize` writes it. Rows no longer discovered are deleted, and
-the rest are written with `updateOrCreate`. Both go through the model one row at a
-time rather than a mass `delete()` or `upsert()`, because the query builder skips
-model events and consumers listen to those.
+`Transportables\Synchronize` writes it with `updateOrCreate`. It only deletes rows
+that are no longer discovered when you ask it to prune. Both go through the model one
+row at a time rather than a mass `delete()` or `upsert()`, because the query builder
+skips model events and consumers listen to those.
+
+Pruning is off by default because a missing or empty classmap cache looks the same
+as "no transports", and pruning then would delete every row.
 
 **It must run at deploy, after `composer install`.** The collector reads the
 classmap cache that composer's post-autoload-dump hook warms. Run it earlier and the
@@ -177,7 +180,10 @@ php artisan event-log:transportables:synchronize
 ```
 
 The command queues the work by default. Add `--sync` to run it inline, which is
-usually what a deploy script wants.
+usually what a deploy script wants. Add `--prune` to also delete rows it no longer
+finds, but only where the classmap cache is known to build.
+
+`Database\Seeders\Sync` never prunes.
 
 `Database\Seeders\Sync` calls the same action with `->now()`. It exists so a
 local `migrate:fresh --seed` fills the catalog through the mechanism a developer

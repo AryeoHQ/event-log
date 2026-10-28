@@ -528,6 +528,14 @@ php artisan event-log:transportables:synchronize --sync
 
 The command queues by default, so pass `--sync` to run it right away.
 
+By default it only adds and updates rows. Add `--prune` to also delete rows for
+events that no longer exist. Only prune where the classmap cache is known to build,
+since an empty cache would delete every row:
+
+```
+php artisan event-log:transportables:synchronize --sync --prune
+```
+
 A seeder does the same work, if that fits your deploy or local setup better:
 
 ```php

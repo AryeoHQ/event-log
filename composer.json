@@ -7,7 +7,10 @@
         "artifactory": {
             "type": "composer",
             "url": "https://artifactory.zgtools.net/artifactory/api/composer/listing-and-vendor-management-composer/",
-            "only": ["aryeo/*", "zillow/*"]
+            "only": [
+                "aryeo/*",
+                "zillow/*"
+            ]
         }
     },
     "require": {
@@ -18,7 +21,8 @@
         "nesbot/carbon": "^3.11",
         "aryeo/tooling-laravel": "0.0.43",
         "phpstan/phpstan": "^2.1",
-        "nikic/php-parser": "^5.0"
+        "nikic/php-parser": "^5.0",
+        "symfony/console": "^7.4 || ^8.0"
     },
     "require-dev": {
         "orchestra/testbench": "^10.6 || ^11",
