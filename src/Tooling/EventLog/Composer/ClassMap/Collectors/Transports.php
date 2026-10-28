@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tooling\EventLog\Composer\ClassMap\Collectors;
 
-use Illuminate\Support\Collection;
 use ReflectionClass;
 use Support\Events\Log\Transports\Contracts\Transport;
 use Tooling\Composer\ClassMap\Collectors\Contracts\Collector;
@@ -15,23 +14,12 @@ final class Transports implements Collector
     use Fakeable;
 
     /**
-     * @param  \Illuminate\Support\Collection<int, class-string>  $classes
-     * @return \Illuminate\Support\Collection<int, class-string>
+     * @param  array<class-string, \ReflectionClass<*>>  $reflections
      */
-    public function collect(Collection $classes): Collection
+    public function collects(ReflectionClass $class, array $reflections): bool
     {
-        return $classes
-            ->reject(fn (string $class): bool => str_contains($class, 'Fixtures\\Tooling'))
-            ->filter(fn (string $class): bool => rescue(
-                fn (): bool => with(
-                    new ReflectionClass($class),
-                    fn (ReflectionClass $reflection): bool => is_a($class, Transport::class, true)
-                        && ! $reflection->isInterface()
-                        && ! $reflection->isAbstract(),
-                ),
-                false,
-                false,
-            ))
-            ->values();
+        return ! str_contains($class->getName(), 'Fixtures\\Tooling')
+            && $class->implementsInterface(Transport::class)
+            && ! $class->isAbstract();
     }
 }
