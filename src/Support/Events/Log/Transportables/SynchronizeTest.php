@@ -65,7 +65,7 @@ final class SynchronizeTest extends TestCase
     }
 
     #[Test]
-    public function it_removes_rows_that_are_no_longer_discovered(): void
+    public function it_keeps_rows_that_are_no_longer_discovered_by_default(): void
     {
         Transportable::create([
             'id' => 'relayable.retired',
@@ -74,6 +74,20 @@ final class SynchronizeTest extends TestCase
         ]);
 
         Synchronize::make()->now();
+
+        $this->assertNotNull(Transportable::find('relayable.retired'));
+    }
+
+    #[Test]
+    public function it_removes_rows_that_are_no_longer_discovered_when_pruning(): void
+    {
+        Transportable::create([
+            'id' => 'relayable.retired',
+            'class' => Updated::class,
+            'transports' => [Mqtt::class],
+        ]);
+
+        Synchronize::make(shouldPrune: true)->now();
 
         $this->assertNull(Transportable::find('relayable.retired'));
     }
@@ -113,7 +127,7 @@ final class SynchronizeTest extends TestCase
 
         Event::fake([Events\Deleting::class]);
 
-        Synchronize::make()->now();
+        Synchronize::make(shouldPrune: true)->now();
 
         Event::assertDispatched(
             Events\Deleting::class,
@@ -134,7 +148,7 @@ final class SynchronizeTest extends TestCase
 
         Event::fake([Events\Deleting::class]);
 
-        Synchronize::make()->now();
+        Synchronize::make(shouldPrune: true)->now();
 
         Event::assertDispatched(
             Events\Deleting::class,
