@@ -34,8 +34,8 @@
             "Tooling\\": "src/Tooling"
         },
         "exclude-from-classmap": [
-            "*Test.php",
-            "*TestCases.php",
+            "/src/**/*Test.php",
+            "/src/**/*TestCases.php",
             "tests/Fixtures/Tooling"
         ]
     },
