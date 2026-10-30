@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
+use Support\Database\Eloquent\StateMachines\Attributes\Transitions\Exceptions\Invalid;
 use Support\Events\Log\Deliveries\Delivery;
 use Support\Events\Log\Envelopes\Envelope;
 use Support\Events\Log\Relays\Relay;
@@ -87,11 +88,13 @@ final class ProcessTest extends TestCase
 
         // Simulate an at-least-once redelivery: the same job runs again on a
         // row whose status has already advanced. A redelivered worker sees
-        // the pre-transition Locked state, so replay handle() from there.
+        // the pre-transition Locked state.
         $relay->forceFill(['status' => RelayStatus::Locked])->syncOriginal();
-        $relay->status->process()->now();
+
+        $this->assertThrows(fn () => $relay->status->process()->now(), Invalid::class);
 
         $this->assertCount(1, Delivery::all());
+        $this->assertSame(RelayStatus::Processed, $relay->fresh()->status->enum);
     }
 
     #[Test]
