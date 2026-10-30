@@ -77,7 +77,8 @@ its `Process` goes straight `Locked → Succeeded`.
 
 `Trigger` (in `aryeo/eloquent-state-machines`) is abstract and uses `AsAction`. It
 defaults to `#[TransitionDuring(Phase::After)]`. Its `lifecycle()` wraps
-`before() → handle() → after()` in a `DB::transaction()` (unless the trigger has
+`before() → handle() → after()` in a transaction on the model's own connection,
+`$model->getConnection()->transaction()` (unless the trigger has
 `#[WithoutTransaction]`). On a throw it refreshes the model — only when the
 transaction wrapper is in play — and re-throws.
 `before()` guards `allowed()`, dispatches the before-event, and (for a
@@ -87,8 +88,10 @@ dispatches the after-event, unless the job failed or released.
 Two guards protect a transition at execution time. Both run on the worker, so they
 protect a queued job as well as a synchronous one.
 
-- **`preventInvalidTransition`** — the redelivery guard. It compares the persisted
-  state (`getRawOriginal`) against the expected `$from`. If the record has already
+- **`preventInvalidTransition`** — the redelivery guard. It compares the loaded
+  state (`getRawOriginal`) against the expected `$from`. It then re-reads the
+  column from the database with `lockForUpdate()` and compares that value too. So
+  a stale in-memory model cannot pass the guard. If the record has already
   advanced, the trigger throws `Invalid` before `handle()` runs. So a redelivered
   process step on a record that already moved on does nothing.
 - **`changesState`** — the no-op guard. It compares the persisted state against
@@ -100,7 +103,7 @@ protect a queued job as well as a synchronous one.
 - `#[TransitionDuring(Phase::Before)]` — write the target state before `handle()`
   runs. The record is already in the new state during handling. The default is
   `Phase::After`.
-- `#[WithoutTransaction]` — skip the `DB::transaction()` wrapper.
+- `#[WithoutTransaction]` — skip the connection transaction wrapper.
 - `dispatchAfterFailed()` — a fluent call chained at the call site, not an
   attribute. If the trigger throws while it runs synchronously, re-queue it once.
   This stops a record from being stranded mid-lifecycle.

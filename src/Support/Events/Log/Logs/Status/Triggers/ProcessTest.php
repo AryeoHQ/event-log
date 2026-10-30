@@ -7,6 +7,7 @@ namespace Support\Events\Log\Logs\Status\Triggers;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
+use Support\Database\Eloquent\StateMachines\Attributes\Transitions\Exceptions\Invalid;
 use Support\Events\Log\Logs\Log;
 use Support\Events\Log\Logs\Status\Status as LogStatus;
 use Support\Events\Log\Relays\Relay;
@@ -74,11 +75,13 @@ final class ProcessTest extends TestCase
 
         // Simulate an at-least-once redelivery: the same job runs again on a
         // row whose status has already advanced. A redelivered worker sees
-        // the pre-transition Locked state, so replay handle() from there.
+        // the pre-transition Locked state.
         $log->forceFill(['status' => LogStatus::Locked])->syncOriginal();
-        $log->status->process()->now();
+
+        $this->assertThrows(fn () => $log->status->process()->now(), Invalid::class);
 
         $this->assertCount(1, Relay::all());
+        $this->assertSame(LogStatus::Processed, $log->fresh()->status->enum);
     }
 
     #[Test]
