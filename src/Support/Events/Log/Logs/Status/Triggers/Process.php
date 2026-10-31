@@ -34,7 +34,11 @@ final class Process extends Trigger
     /** @return array<int, object> */
     public function middleware(): array
     {
-        return [(new WithoutOverlapping($this->to::class.':'.$this->log->getKey()))->dontRelease()->expireAfter(config('event_log.locking.ttl'))];
+        return [
+            // A redelivered job can reach a log that has already left Locked; the transition would be invalid, so drop it.
+            fn (self $trigger, callable $next): mixed => $trigger->log->status->enum === $trigger->from ? $next($trigger) : null,
+            (new WithoutOverlapping($this->to::class.':'.$this->log->getKey()))->dontRelease()->expireAfter(config('event_log.locking.ttl')),
+        ];
     }
 
     public function handle(): void

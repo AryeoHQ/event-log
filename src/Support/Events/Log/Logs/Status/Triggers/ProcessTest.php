@@ -85,6 +85,25 @@ final class ProcessTest extends TestCase
     }
 
     #[Test]
+    public function it_ignores_a_redelivered_job_for_a_log_that_is_already_processed(): void
+    {
+        Fail::fake();
+
+        $log = Log::factory()->mqtt()->locked()->createQuietly();
+
+        $trigger = $log->status->process();
+
+        $log->status->process()->now();
+
+        // A redelivered job unserializes the model as Processed while the trigger still expects Locked.
+        $trigger->on($log->fresh())->now();
+
+        Fail::assertNotFired();
+        $this->assertSame(LogStatus::Processed, $log->fresh()->status->enum);
+        $this->assertCount(1, Relay::all());
+    }
+
+    #[Test]
     public function it_fires_fail_trigger_on_failure(): void
     {
         Fail::fake();
